@@ -1,0 +1,58 @@
+data:
+  name: aishell
+  vocab: egs/aishell/data/vocab
+  batch_size: 16
+  text: character
+  train: egs/aishell/data/train
+  test: egs/aishell/data/test
+  dev: egs/aishell/data/dev
+  short_first: False
+  num_mel_bins: 40
+  apply_cmvn: False
+  normalization: False
+  spec_argument: False
+  left_frames: 0
+  right_frames: 0
+  skip_frames: 0
+  from_kaldi: False
+  num_works: 4
+model:
+  # network architecture
+  type: transformer
+  d_model: 256
+  normalize_before: True
+  concat_after: False
+  # dropout
+  pos_dropout_rate: 0.0
+  ffn_dropout_rate: 0.0
+  slf_attn_dropout_rate: 0.0
+  src_attn_dropout_rate: 0.0
+  residual_dropout_rate: 0.1
+  # encoder related
+  feat_dim: 40
+  num_enc_blocks: 6
+  enc_ffn_units: 1024
+  enc_input_layer: conv2d
+  # decoder related
+  vocab_size: 4233
+  num_dec_blocks: 6
+  dec_ffn_units: 1024
+  # attention related
+  n_heads: 4
+  # label smoothing
+  smoothing: 0.1
+  activation: glu
+  share_embedding: True
+  init: xavier_uniform
+train:
+  scheduler: stepwise
+  optimizer: adam
+  warmup_steps: 25000
+  shuffle: False
+  lr: 1.0
+  clip_grad: 5
+  epochs: 5
+  accum_steps: 1
+  grad_noise: False
+  load_model: False
+  save_name: transformer
