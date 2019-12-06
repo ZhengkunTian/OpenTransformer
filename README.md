@@ -4,27 +4,27 @@ This is a speech transformer model for end-to-end speech recognition.
 
 ## Function
 
--[x] Speech Transformer
+- Speech Transformer
 
--[x] Label Smoothing
+- Label Smoothing
 
--[x] Share weights of Embedding with output softmax layer
+- Share weights of Embedding with output softmax layer
 
--[x] Data Augmentation([SpecAugument](https://arxiv.org/abs/1904.08779))
+- Data Augmentation([SpecAugument](https://arxiv.org/abs/1904.08779))
 
--[x] Extract Fbank features in a online funshion
+- Extract Fbank features in a online funshion
 
--[x] Visualization based Tensorboard
+- Visualization based Tensorboard
 
--[x] Batch Beam Search with Length Penalty
+- Batch Beam Search with Length Penalty
 
--[x] Multiple Optimizers and Schedulers
+- Multiple Optimizers and Schedulers
 
--[x] Multiple Activation Functions in FFN
+- Multiple Activation Functions in FFN
 
--[x] Multi GPU (Three Mode: [dp](https://pytorch.org/docs/stable/nn.html#dataparallel), [ddp](https://pytorch.org/docs/stable/nn.html#distributeddataparallel), [hvd](https://github.com/horovod/horovod))
+- Multi GPU (Three Mode: [dp](https://pytorch.org/docs/stable/nn.html#dataparallel), [ddp](https://pytorch.org/docs/stable/nn.html#distributeddataparallel), [hvd](https://github.com/horovod/horovod))
 
-[x] Mixed Precision Training based [apex](https://github.com/NVIDIA/apex)
+- Mixed Precision Training based [apex](https://github.com/NVIDIA/apex)
 
 ## Train
 - Single GPU
