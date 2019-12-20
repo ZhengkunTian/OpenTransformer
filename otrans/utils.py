@@ -76,21 +76,13 @@ def get_seq_mask(targets):
     return seq_mask
 
 
-def get_dec_seq_mask(targets, targets_length=None):
-    steps = targets.size(-1)
-    padding_mask = targets.ne(PAD).unsqueeze(-2)
-    seq_mask = torch.ones([steps, steps], device=targets.device)
-    seq_mask = torch.tril(seq_mask).bool()
-    seq_mask = seq_mask.unsqueeze(0)
-    return seq_mask & padding_mask
-
-
-def get_tdnn_pad_mask(tensor, tensor_length):
-    mask = torch.ones_like(tensor, dtype=torch.uint8)
-    for i, length in enumerate(tensor_length):
-        length = length.item()
-        mask[i].narrow(1, 0, length).fill_(0)
-    return mask.bool()
+# def get_dec_seq_mask(targets, targets_length=None):
+#     steps = targets.size(-1)
+#     padding_mask = targets.ne(PAD).unsqueeze(-2)
+#     seq_mask = torch.ones([steps, steps], device=targets.device)
+#     seq_mask = torch.tril(seq_mask).bool()
+#     seq_mask = seq_mask.unsqueeze(0)
+#     return seq_mask & padding_mask
 
 
 def get_length_mask(tensor, tensor_length):
@@ -99,33 +91,6 @@ def get_length_mask(tensor, tensor_length):
     for i, length in enumerate(tensor_length):
         length = length.item()
         mask[i].narrow(0, 0, length).fill_(0)
-    return mask.bool()
-
-
-def get_streaming_mask(tensor, length, left_context, right_context):
-    b, t, _ = tensor.size()
-
-    if left_context + 1 > t:
-        left_context = t - 1
-
-    if left_context >= 0:
-        left_mask = torch.tril(torch.ones((t, t), dtype=torch.uint8), diagonal=-(left_context + 1))
-    else:
-        left_mask = torch.zeros((t, t), dtype=torch.uint8)
-
-    if right_context >= 0:
-        right_mask = torch.triu(torch.ones((t, t), dtype=torch.uint8), diagonal=right_context + 1)
-    else:
-        right_mask = torch.zeros((t, t), dtype=torch.uint8)
-
-    mask = left_mask + right_mask
-    mask = mask.unsqueeze(0).expand(b, -1, -1)
-    mask = ~mask.to(tensor.device)
-
-    for b in range(tensor.size(0)):
-        mask[b, :, length[b].item():] = 0
-        mask[b, length[b].item():] = 1
-
     return mask.bool()
 
 
