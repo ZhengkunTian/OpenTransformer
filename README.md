@@ -44,10 +44,6 @@ python run.py --config egs/aishell/transformer.yaml --parallel_mode dp --ngpu 2
 ```python
 OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=2 run.py --config egs/aishell/transformer.yaml --parallel_mode ddp --ngpu 2
 ```
-- Mutil GPU Training based Hovorod
-```python
-horovodrun -np 4 -H localhost:4 python run.py --config egs/aishell/transformer.yaml --parallel_mode hvd --ngpu 2
-```
 
 ## Eval
 ```python
