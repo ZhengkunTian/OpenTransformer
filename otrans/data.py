@@ -121,69 +121,6 @@ def concat_and_subsample(features, left_frames=3, right_frames=0, skip_frames=2)
     return concated_features[::skip_frames+1, :]
 
 
-# class WavDataset(Dataset):
-#     def __init__(self, params, name='train'):
-
-#         self.params = params
-#         self.datadir = params[name]
-#         self.left_frames = params['left_frames']
-#         self.right_frames = params['right_frames']
-#         self.skip_frames = params['skip_frames']
-
-#         self.unit2idx = load_vocab(params['vocab'])
-#         if name == 'train':
-#             print('There are %d units in the Vocabulary!' % len(self.unit2idx))
-        
-#         self.targets_dict = {}
-#         with open(os.path.join(self.datadir, params['text']), 'r', encoding='utf-8') as t:
-#             for line in t:
-#                 parts = line.strip().split()
-#                 utt_id = parts[0]
-#                 label = []
-#                 for c in parts[1:]:
-#                     label.append(self.unit2idx[c] if c in self.unit2idx else self.unit2idx[unk])
-#                 self.targets_dict[utt_id] = label
-                
-#         self.wav_list = []
-#         with open(os.path.join(self.datadir, 'wav.scp'), 'r') as w:
-#             for line in w:
-#                 utt_id, path = line.strip().split()
-#                 self.wav_list.append((utt_id, path))
-
-#         assert len(self.wav_list) == len(self.targets_dict)
-        
-#         if self.params['spec_argument']:
-#             print('Apply SpecArgument!')
-
-#     def __len__(self):
-#         return len(self.wav_list)
-
-#     def __getitem__(self, idx):
-        
-#         utt_id, path = self.wav_list[idx]
-
-#         wavform, _ = ta.load_wav(path)
-#         feature = compute_fbank(wavform, num_mel_bins=self.params['num_mel_bins'])
-
-#         if self.params['normalization']:
-#             feature = normalization(feature)
-
-#         if self.params['spec_argument'] and self.name == 'train':
-#             feature = spec_augment(feature)
-
-#         if self.left_frames > 0 or self.right_frames > 0:
-#             feature = concat_and_subsample(feature, left_frames=self.left_frames,
-#                                            right_frames=self.right_frames, skip_frames=self.skip_frames)
-
-#         target = self.targets_dict[utt_id]
-
-#         return utt_id, feature, feature.shape[0], target, len(target)
-
-#     @property
-#     def batch_size(self):
-#         return self.params['batch_size']
-
-
 class AudioDataset(Dataset):
     def __init__(self, params, name='train'):
 
@@ -371,11 +308,11 @@ def collate_fn(batch):
 class FeatureLoader(object):
     def __init__(self, dataset, shuffle=False, ngpu=1, mode='ddp', include_eos_sos=True):
         if ngpu > 1:
-            if mode == 'hvd':
-                import horovod.torch as hvd
-                self.sampler = torch.utils.data.distributed.DistributedSampler(dataset, num_replicas=hvd.size(),
-                                                                               rank=hvd.rank())
-            elif mode == 'ddp':
+#             if mode == 'hvd':
+#                 import horovod.torch as hvd
+#                 self.sampler = torch.utils.data.distributed.DistributedSampler(dataset, num_replicas=hvd.size(),
+#                                                                                rank=hvd.rank())
+            if mode == 'ddp':
                 self.sampler = torch.utils.data.distributed.DistributedSampler(dataset)
             else:
                 self.sampler = None
