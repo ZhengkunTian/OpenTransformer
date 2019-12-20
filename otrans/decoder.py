@@ -2,7 +2,7 @@ import torch
 import random
 import torch.nn as nn
 import torch.nn.functional as F
-from otrans.utils import get_dec_seq_mask, get_seq_mask, get_length_mask
+from otrans.utils import get_seq_mask
 from otrans.module import LayerNorm, PositionalEncoding
 from otrans.layer import TransformerDecoderLayer, TransformerEncoderLayer
 
@@ -38,7 +38,7 @@ class TransformerDecoder(nn.Module):
         dec_output = self.embedding(targets)
         dec_output = self.pos_encoding(dec_output)
 
-        dec_mask = get_dec_seq_mask(targets, target_length)
+        dec_mask = get_seq_mask(targets, target_length)
 
         for _, block in enumerate(self.blocks):
             dec_output, dec_mask = block(dec_output, dec_mask, memory, memory_mask)
