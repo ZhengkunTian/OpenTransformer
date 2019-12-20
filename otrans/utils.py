@@ -76,13 +76,13 @@ def get_seq_mask(targets):
     return seq_mask
 
 
-# def get_dec_seq_mask(targets, targets_length=None):
-#     steps = targets.size(-1)
-#     padding_mask = targets.ne(PAD).unsqueeze(-2)
-#     seq_mask = torch.ones([steps, steps], device=targets.device)
-#     seq_mask = torch.tril(seq_mask).bool()
-#     seq_mask = seq_mask.unsqueeze(0)
-#     return seq_mask & padding_mask
+def get_dec_seq_mask(targets, targets_length=None):
+    steps = targets.size(-1)
+    padding_mask = targets.ne(PAD).unsqueeze(-2)
+    seq_mask = torch.ones([steps, steps], device=targets.device)
+    seq_mask = torch.tril(seq_mask).bool()
+    seq_mask = seq_mask.unsqueeze(0)
+    return seq_mask & padding_mask
 
 
 def get_length_mask(tensor, tensor_length):
