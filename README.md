@@ -27,7 +27,7 @@ Torchaudio: 0.3.0
 
 - Multiple Activation Functions in FFN
 
-- Multi GPU (Three Mode: [dp](https://pytorch.org/docs/stable/nn.html#dataparallel), [ddp](https://pytorch.org/docs/stable/nn.html#distributeddataparallel)
+- Multi GPU ([dp](https://pytorch.org/docs/stable/nn.html#dataparallel), [ddp](https://pytorch.org/docs/stable/nn.html#distributeddataparallel))
 
 - Mixed Precision Training based [apex](https://github.com/NVIDIA/apex)
 
