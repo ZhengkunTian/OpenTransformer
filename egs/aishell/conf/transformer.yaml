@@ -20,7 +20,7 @@ model:
   # network architecture
   type: transformer
   d_model: 256
-  normalize_before: True
+  normalize_before: False
   concat_after: False
   # dropout
   pos_dropout_rate: 0.0
@@ -43,7 +43,6 @@ model:
   smoothing: 0.1
   activation: glu
   share_embedding: True
-  init: xavier_uniform
 train:
   scheduler: stepwise
   optimizer: adam
