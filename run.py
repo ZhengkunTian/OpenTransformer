@@ -51,11 +51,11 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=0)
     cmd_args = parser.parse_args()
 
-    if cmd_args.parallel_mode == 'hvd':
-        import horovod.torch as hvd
-        hvd.init()
-        torch.cuda.set_device(hvd.local_rank())
-    elif cmd_args.parallel_mode == 'ddp':
+#     if cmd_args.parallel_mode == 'hvd':
+#         import horovod.torch as hvd
+#         hvd.init()
+#         torch.cuda.set_device(hvd.local_rank())
+    if cmd_args.parallel_mode == 'ddp':
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = '12355'
         os.environ["OMP_NUM_THREADS"] = '1'
