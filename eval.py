@@ -60,8 +60,8 @@ def main(args):
 
         preds = recognizer.recognize(inputs, inputs_length)
 
-        targets = labels['targets']
-        targets_length = labels['targets_length']
+        targets = batch['targets']
+        targets_length = batch['targets_length']
 
         for b in range(len(preds)):
             n = step * batch_size + b
