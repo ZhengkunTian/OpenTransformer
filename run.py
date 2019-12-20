@@ -28,12 +28,8 @@ def main(args):
     print(model)
 
     # build optimizer
-    if params['train']['scheduler'] == 'stepwise':
-        optimizer = TransformerOptimizer(model, params['train'], model_size=params['model']['d_model'],
-                                         parallel_mode=args.parallel_mode)
-    else:
-        optimizer = KindsOfOptimizer[params['train']['scheduler']](model, params['train'],
-                                                                   parallel_mode=args.parallel_mode)
+    optimizer = TransformerOptimizer(model, params['train'], model_size=params['model']['d_model'],
+                                     parallel_mode=args.parallel_mode)
 
     trainer = Trainer(params, model=model, optimizer=optimizer, is_visual=True, expdir=expdir, ngpu=args.ngpu,
                       parallel_mode=args.parallel_mode, local_rank=args.local_rank)
@@ -51,10 +47,6 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=0)
     cmd_args = parser.parse_args()
 
-#     if cmd_args.parallel_mode == 'hvd':
-#         import horovod.torch as hvd
-#         hvd.init()
-#         torch.cuda.set_device(hvd.local_rank())
     if cmd_args.parallel_mode == 'ddp':
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = '12355'
