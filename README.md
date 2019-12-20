@@ -32,7 +32,7 @@ Torchaudio: 0.3.0
 - Mixed Precision Training based [apex](https://github.com/NVIDIA/apex)
 
 ## To Do
-- [] LM Shollow Fusion
+- LM Shollow Fusion
 
 ## Train
 - Single GPU
