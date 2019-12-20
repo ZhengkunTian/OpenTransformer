@@ -46,12 +46,12 @@ class Trainer(object):
             self.model, self.optimizer.optimizer = amp.initialize(self.model, self.optimizer.optimizer, opt_level=self.opt_level)
 
         if self.ngpu > 1:
-            if self.parallel_mode == 'hvd':
-                import horovod.torch as hvd
-                hvd.broadcast_parameters(self.model.state_dict(), root_rank=0)
-                self.logger.info('[Horovod] Use %d gpus for training!' % self.ngpu)
+#             if self.parallel_mode == 'hvd':
+#                 import horovod.torch as hvd
+#                 hvd.broadcast_parameters(self.model.state_dict(), root_rank=0)
+#                 self.logger.info('[Horovod] Use %d gpus for training!' % self.ngpu)
 
-            elif self.parallel_mode == 'ddp':
+            if self.parallel_mode == 'ddp':
                 import torch.distributed as dist
                 dist.init_process_group(backend="nccl", init_method='env://',
                                         rank=local_rank, world_size=self.ngpu)
@@ -225,8 +225,8 @@ class Trainer(object):
 
         if self.parallel_mode == 'ddp':
             return dist.get_rank()
-        elif self.parallel_mode == 'hvd':
-            return hvd.rank()
+#         elif self.parallel_mode == 'hvd':
+#             return hvd.rank()
         else:
             return 0
 
