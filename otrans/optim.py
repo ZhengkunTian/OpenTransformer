@@ -1,6 +1,5 @@
 import torch
 import math
-from torch.optim.lr_scheduler import LambdaLR
 
 
 class Optimizer(object):
