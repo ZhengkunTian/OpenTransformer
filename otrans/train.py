@@ -71,7 +71,7 @@ class Trainer(object):
 
     def train(self, train_dataset, dev_dataset=None):
 
-        include_eos_sos = False if self.params['model']['type'] == 'transducer' else True
+        include_eos_sos = True
         train_loader = FeatureLoader(train_dataset, shuffle=self.shuffle, ngpu=self.ngpu,
                                      mode=self.parallel_mode, include_eos_sos=include_eos_sos)
         if dev_dataset is not None:
