@@ -2,7 +2,7 @@ import os
 import yaml
 import torch
 import argparse
-from otrans.transformer import Transformer
+from otrans.model import Transformer
 from otrans.optim import *
 from otrans.train import Trainer
 from otrans.data import AudioDataset
