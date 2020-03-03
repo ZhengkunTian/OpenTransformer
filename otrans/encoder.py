@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from otrans.module import *
-from otrans.utils import get_enc_padding_mask, get_streaming_mask
+from otrans.utils import get_enc_padding_mask
 from otrans.layer import TransformerEncoderLayer
 
 
@@ -31,16 +31,12 @@ class TransformerEncoder(nn.Module):
         if self.normalize_before:
             self.after_norm = LayerNorm(d_model)
 
-    def forward(self, inputs, input_length, streaming=False):
+    def forward(self, inputs, input_length):
 
         enc_mask = get_enc_padding_mask(inputs, input_length)
         enc_output, enc_mask = self.embed(inputs, enc_mask)
 
         enc_output.masked_fill_(~enc_mask.transpose(1, 2), 0.0)
-
-        if streaming:
-            length = torch.sum(enc_mask.squeeze(1), dim=-1)
-            enc_mask = get_streaming_mask(enc_output, length, left_context=20, right_context=0)
 
         for _, block in enumerate(self.blocks):
             enc_output, enc_mask = block(enc_output, enc_mask)
