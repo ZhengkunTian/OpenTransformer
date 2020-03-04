@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from otrans.attention import MultiHeadedAttention
 from otrans.module import LayerNorm, PositionwiseFeedForward
-from otrans.utils import get_tdnn_pad_mask
 
 
 class TransformerEncoderLayer(nn.Module):
