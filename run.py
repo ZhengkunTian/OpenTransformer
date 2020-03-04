@@ -40,11 +40,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='egs/aishell/conf/transformer_base.yaml')
-    parser.add_argument('--ngpu', type=int, default=1)
-    parser.add_argument('--seed', type=int, default=1234)
-    parser.add_argument('--parallel_mode', type=str, default=None)
-    parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('-c', '--config', type=str, default=None)
+    parser.add_argument('-n', '--ngpu', type=int, default=1)
+    parser.add_argument('-s', '--seed', type=int, default=1234)
+    parser.add_argument('-p', '--parallel_mode', type=str, default='dp')
+    parser.add_argument('-r', '--local_rank', type=int, default=0)
     cmd_args = parser.parse_args()
 
     if cmd_args.parallel_mode == 'ddp':
