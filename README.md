@@ -3,9 +3,9 @@
 This is a speech transformer model for end-to-end speech recognition.
 
 # Requirements
-Pytorch: 1.2.0
+Pytorch >= 1.2.0
 
-Torchaudio: 0.3.0
+Torchaudio >= 0.3.0
 
 ## Function
 
@@ -64,20 +64,20 @@ if you want to compute features online, please make sure you have a wav.scp file
 ## Train
 - Single GPU
 ```python
-python rnn.py --config egs/aishell/conf/transformer.yaml
+python rnn.py -c egs/aishell/conf/transformer.yaml
 ```
 - Multi GPU Training based DataParallel
 ```python
-python run.py --config egs/aishell/transformer.yaml --parallel_mode dp --ngpu 2
+python run.py -c egs/aishell/transformer.yaml -p dp -n 2
 ```
 - Multi GPU Training based distributeddataparallel
 ```python
-OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=2 run.py --config egs/aishell/transformer.yaml --parallel_mode ddp --ngpu 2
+OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=2 run.py -c egs/aishell/transformer.yaml -p ddp -n 2
 ```
 
 ## Eval
 ```python
-python eval.py --load_model model.pt
+python eval.py -m model.pt
 ```
 
 ## Experiments
