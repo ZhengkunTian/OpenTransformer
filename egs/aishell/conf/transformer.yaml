@@ -9,8 +9,8 @@ data:
   short_first: False
   num_mel_bins: 40
   apply_cmvn: False
-  normalization: False
-  spec_argument: False
+  normalization: True
+  spec_argument: True
   left_frames: 0
   right_frames: 0
   skip_frames: 0
@@ -46,8 +46,8 @@ model:
 train:
   scheduler: stepwise
   optimizer: adam
-  warmup_steps: 25000
-  shuffle: False
+  warmup_steps: 12000
+  shuffle: True
   lr: 1.0
   clip_grad: 5
   epochs: 5
