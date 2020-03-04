@@ -187,8 +187,8 @@ class AudioDataset(Dataset):
         if self.from_kaldi:
             feature = kio.load_mat(path)
         else:
-            wavform, _ = ta.load_wav(path)
-            feature = compute_fbank(wavform, num_mel_bins=self.params['num_mel_bins'])
+            wavform, sample_frequency = ta.load_wav(path)
+            feature = compute_fbank(wavform, num_mel_bins=self.params['num_mel_bins'], sample_frequency=sample_frequency)
 
         if self.params['apply_cmvn']:
             spk_id = self.utt2spk[utt_id]
@@ -197,6 +197,12 @@ class AudioDataset(Dataset):
 
         if self.params['normalization']:
             feature = normalization(feature)
+            
+        if self.params['spec_argument']:
+            try:
+                feature = spec_augment(feature)
+            except:
+                pass
 
         if self.left_frames > 0 or self.right_frames > 0:
             feature = concat_and_subsample(feature, left_frames=self.left_frames,
@@ -245,7 +251,7 @@ def collate_fn_with_eos_bos(batch):
 
     utt_ids = [data[0] for data in batch]
     features_length = [data[2] for data in batch]
-    targets_length = [data[4] + 1 for data in batch]
+    targets_length = [data[4] for data in batch]
     max_feature_length = max(features_length)
     max_target_length = max(targets_length)
 
@@ -256,7 +262,7 @@ def collate_fn_with_eos_bos(batch):
         padded_features.append(np.pad(feat, ((
             0, max_feature_length-feat_len), (0, 0)), mode='constant', constant_values=0.0))
         padded_targets.append(
-            [BOS] + target + [EOS] + [PAD] * (max_target_length - target_len - 1))
+            [BOS] + target + [EOS] + [PAD] * (max_target_length - target_len))
 
     features = torch.FloatTensor(padded_features)
     features_length = torch.IntTensor(features_length)
