@@ -181,13 +181,12 @@ class Trainer(object):
     def eval(self, dev_loader):
         self.model.eval()
         eval_loss = 0
-        for step, (_, features, labels) in enumerate(dev_loader):
+        for step, (_, batch) in enumerate(dev_loader):
 
             if self.ngpu > 0:
-                features = map_to_cuda(features)
-                labels = map_to_cuda(labels)
+                batch = map_to_cuda(batch)
 
-            loss = self.model(features, labels)
+            loss = self.model(**batch)
 
             eval_loss += loss.item()
 
