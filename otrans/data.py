@@ -15,12 +15,12 @@ compute_fbank = ta.compliance.kaldi.fbank
 
 
 def load_vocab(vocab_file):
-    unit2idx = {'<S/S>': 0, '<PAD>': 1, '<UNK>': 2}
+    # unit2idx = {'<S/E>': 0, '<PAD>': 1, '<UNK>': 2}
     with open(os.path.join(vocab_file), 'r', encoding='utf-8') as v:
-        idx = 3
+        idx = 0
         for line in v:
-            unit, _ = line.strip().split()
-            unit2idx[unit] = idx
+            unit, idx = line.strip().split()
+            unit2idx[unit] = int(idx)
             idx += 1
     return unit2idx
 
