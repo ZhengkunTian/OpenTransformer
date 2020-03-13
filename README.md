@@ -34,12 +34,15 @@ Torchaudio >= 0.3.0
 ## To Do
 - LM Shollow Fusion
 
-# Prepare
+## Prepare
 vocab
 ```
-# character id/frequency
-你 1000
-很 500
+# character idx
+<S/E> 0
+<PAD> 1
+<UNK> 2
+我 3
+你 4
 ...
 ```
 character
@@ -58,7 +61,7 @@ if you want to compute features online, please make sure you have a wav.scp file
 ```
 # wav.scp
 # id path
-1 /data/aishell/wav/1.wav
+BAC009S0764W0139 /data/aishell/wav/BAC009S0764W0139.wav
 ```
 
 ## Train
