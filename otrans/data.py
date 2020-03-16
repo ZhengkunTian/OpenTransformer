@@ -5,9 +5,9 @@ import numpy as np
 import torchaudio as ta
 from torch.utils.data import Dataset, DataLoader
 
-EOS = 0
-BOS = 0
-PAD = 1
+PAD = 0
+EOS = 1
+BOS = 1
 UNK = 2
 MASK = 2
 unk = '<UNK>'
