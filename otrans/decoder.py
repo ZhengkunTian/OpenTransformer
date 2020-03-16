@@ -53,6 +53,7 @@ class TransformerDecoder(nn.Module):
     def recognize(self, preds, memory, memory_mask, last=True):
 
         dec_output = self.embedding(preds)
+        dec_output = self.pos_encoding(dec_output)
         dec_mask = get_seq_mask(preds)
 
         for _, block in enumerate(self.blocks):
