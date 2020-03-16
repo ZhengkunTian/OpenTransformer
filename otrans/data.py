@@ -37,47 +37,47 @@ def apply_cmvn(mat, stats):
     return np.divide(np.subtract(mat, mean), np.sqrt(variance))
 
 
-def time_mask(spec, T=15, num_masks=1, replace_with_zero=False):
-    cloned = spec.clone()
-    len_spectro = cloned.shape[2]
+# def time_mask(spec, T=15, num_masks=1, replace_with_zero=False):
+#     cloned = spec.clone()
+#     len_spectro = cloned.shape[2]
 
-    for i in range(0, num_masks):
-        t = random.randrange(0, T)
-        t_zero = random.randrange(0, len_spectro - t)
+#     for i in range(0, num_masks):
+#         t = random.randrange(0, T)
+#         t_zero = random.randrange(0, len_spectro - t)
 
-        # avoids randrange error if values are equal and range is empty
-        if (t_zero == t_zero + t): return cloned
+#         # avoids randrange error if values are equal and range is empty
+#         if (t_zero == t_zero + t): return cloned
 
-        mask_end = random.randrange(t_zero, t_zero + t)
-        if (replace_with_zero):
-            cloned[0][:, t_zero:mask_end] = 0
-        else:
-            cloned[0][:, t_zero:mask_end] = cloned.mean()
-    return cloned
+#         mask_end = random.randrange(t_zero, t_zero + t)
+#         if (replace_with_zero):
+#             cloned[0][:, t_zero:mask_end] = 0
+#         else:
+#             cloned[0][:, t_zero:mask_end] = cloned.mean()
+#     return cloned
 
 
-def freq_mask(spec, F=15, num_masks=1, replace_with_zero=False):
-    cloned = spec.clone()
-    num_mel_channels = cloned.shape[1]
+# def freq_mask(spec, F=15, num_masks=1, replace_with_zero=False):
+#     cloned = spec.clone()
+#     num_mel_channels = cloned.shape[1]
 
-    for i in range(0, num_masks):
-        f = random.randrange(0, F)
-        f_zero = random.randrange(0, num_mel_channels - f)
+#     for i in range(0, num_masks):
+#         f = random.randrange(0, F)
+#         f_zero = random.randrange(0, num_mel_channels - f)
 
-        # avoids randrange error if values are equal and range is empty
-        if (f_zero == f_zero + f): return cloned
+#         # avoids randrange error if values are equal and range is empty
+#         if (f_zero == f_zero + f): return cloned
 
-        mask_end = random.randrange(f_zero, f_zero + f)
-        if (replace_with_zero):
-            cloned[0][f_zero:mask_end] = 0
-        else:
-            cloned[0][f_zero:mask_end] = cloned.mean()
+#         mask_end = random.randrange(f_zero, f_zero + f)
+#         if (replace_with_zero):
+#             cloned[0][f_zero:mask_end] = 0
+#         else:
+#             cloned[0][f_zero:mask_end] = cloned.mean()
 
-    return cloned
+#     return cloned
 
 
 def spec_augment(mel_spectrogram, frequency_mask_num=1, time_mask_num=2,
-                 frequency_masking_para=27, time_masking_para=15):
+                 frequency_masking_para=5, time_masking_para=15):
     tau = mel_spectrogram.shape[0]
     v = mel_spectrogram.shape[1]
 
