@@ -168,7 +168,8 @@ class Trainer(object):
 
                 if self.global_step % self.log_interval == 0 and self.local_rank == 0:
                     end = time.process_time()
-                    process = step * self.world_size / batch_steps * 100
+                    # process = step * self.world_size / batch_steps * 100
+                    process = step / batch_steps * 100
                     self.logger.info('-Training-Epoch-%d(%.5f%%), Global Step:%d, lr:%.8f, Loss:%.5f, AvgLoss: %.5f, '
                                      'Run Time:%.3f' % (epoch, process, self.global_step, self.optimizer.lr,
                                                         step_loss.avg, self.mean_loss.mean(), end - start))
