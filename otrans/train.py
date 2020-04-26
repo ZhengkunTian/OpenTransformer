@@ -127,16 +127,14 @@ class Trainer(object):
         batch_steps = len(train_loader)
 
         step_loss = AverageMeter()
-
+        span = 0
         for step, (_, batch) in enumerate(train_loader):
 
             if self.ngpu > 0:
                 batch = map_to_cuda(batch)
 
             start = time.process_time()
-            
             loss = self.model(**batch)
-
             loss = torch.mean(loss) / self.accum_steps
 
             if self.mixed_precision:
@@ -145,7 +143,8 @@ class Trainer(object):
                     scaled_loss.backward()
             else:
                 loss.backward()
-
+            end = time.process_time()
+            span += (end - start)
             if self.grad_noise:
                 raise NotImplementedError
 
@@ -167,12 +166,13 @@ class Trainer(object):
                     self.visulizer.add_scalar('lr', self.optimizer.lr, self.global_step)
 
                 if self.global_step % self.log_interval == 0 and self.local_rank == 0:
-                    end = time.process_time()
+                    
                     # process = step * self.world_size / batch_steps * 100
                     process = step / batch_steps * 100
                     self.logger.info('-Training-Epoch-%d(%.5f%%), Global Step:%d, lr:%.8f, Loss:%.5f, AvgLoss: %.5f, '
                                      'Run Time:%.3f' % (epoch, process, self.global_step, self.optimizer.lr,
-                                                        step_loss.avg, self.mean_loss.mean(), end - start))
+                                                        step_loss.avg, self.mean_loss.mean(), span))
+                    span = 0
 
                 self.global_step += 1
                 step_loss.reset()
