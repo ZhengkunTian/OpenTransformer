@@ -38,8 +38,8 @@ Torchaudio >= 0.3.0
 vocab
 ```
 # character idx
-<S/E> 0
-<PAD> 1
+<PAD> 0
+<S/E> 1
 <UNK> 2
 我 3
 你 4
