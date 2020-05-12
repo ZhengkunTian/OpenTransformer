@@ -1,6 +1,6 @@
 # OpenTransformer
 
-This is a speech transformer model for end-to-end speech recognition.
+This is a speech-transformer model for end-to-end speech recognition.
 
 # Requirements
 Pytorch >= 1.2.0
