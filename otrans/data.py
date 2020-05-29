@@ -37,45 +37,6 @@ def apply_cmvn(mat, stats):
     return np.divide(np.subtract(mat, mean), np.sqrt(variance))
 
 
-# def time_mask(spec, T=15, num_masks=1, replace_with_zero=False):
-#     cloned = spec.clone()
-#     len_spectro = cloned.shape[2]
-
-#     for i in range(0, num_masks):
-#         t = random.randrange(0, T)
-#         t_zero = random.randrange(0, len_spectro - t)
-
-#         # avoids randrange error if values are equal and range is empty
-#         if (t_zero == t_zero + t): return cloned
-
-#         mask_end = random.randrange(t_zero, t_zero + t)
-#         if (replace_with_zero):
-#             cloned[0][:, t_zero:mask_end] = 0
-#         else:
-#             cloned[0][:, t_zero:mask_end] = cloned.mean()
-#     return cloned
-
-
-# def freq_mask(spec, F=15, num_masks=1, replace_with_zero=False):
-#     cloned = spec.clone()
-#     num_mel_channels = cloned.shape[1]
-
-#     for i in range(0, num_masks):
-#         f = random.randrange(0, F)
-#         f_zero = random.randrange(0, num_mel_channels - f)
-
-#         # avoids randrange error if values are equal and range is empty
-#         if (f_zero == f_zero + f): return cloned
-
-#         mask_end = random.randrange(f_zero, f_zero + f)
-#         if (replace_with_zero):
-#             cloned[0][f_zero:mask_end] = 0
-#         else:
-#             cloned[0][f_zero:mask_end] = cloned.mean()
-
-#     return cloned
-
-
 def spec_augment(mel_spectrogram, frequency_mask_num=1, time_mask_num=2,
                  frequency_masking_para=5, time_masking_para=15):
     tau = mel_spectrogram.shape[0]
@@ -83,7 +44,7 @@ def spec_augment(mel_spectrogram, frequency_mask_num=1, time_mask_num=2,
 
     warped_mel_spectrogram = mel_spectrogram
 
-    # Step 2 : Frequency masking
+    # Step 1 : Frequency masking
     if frequency_mask_num > 0:
         for i in range(frequency_mask_num):
             f = np.random.uniform(low=0.0, high=frequency_masking_para)
@@ -91,7 +52,7 @@ def spec_augment(mel_spectrogram, frequency_mask_num=1, time_mask_num=2,
             f0 = random.randint(0, v-f)
             warped_mel_spectrogram[:, f0:f0+f] = 0
 
-    # Step 3 : Time masking
+    # Step 2 : Time masking
     if time_mask_num > 0:
         for i in range(time_mask_num):
             t = np.random.uniform(low=0.0, high=time_masking_para)
@@ -331,10 +292,10 @@ class FeatureLoader(object):
         else:
             self.sampler = None
 
-        self.loader = torch.utils.data.DataLoaderX(dataset, batch_size=dataset.batch_size * ngpu,
-                                                   shuffle=shuffle if self.sampler is None else False,
-                                                   num_workers=3 * ngpu, pin_memory=True, sampler=self.sampler,
-                                                   collate_fn=collate_fn_with_eos_bos if include_eos_sos else collate_fn)
+        self.loader = DataLoaderX(dataset, batch_size=dataset.batch_size * ngpu,
+                                  shuffle=shuffle if self.sampler is None else False,
+                                  num_workers=3 * ngpu, pin_memory=True, sampler=self.sampler,
+                                  collate_fn=collate_fn_with_eos_bos if include_eos_sos else collate_fn)
 
     def set_epoch(self, epoch):
         self.sampler.set_epoch(epoch)
