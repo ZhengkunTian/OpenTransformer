@@ -332,7 +332,7 @@ class FeatureLoader(object):
 
         self.loader = torch.utils.data.DataLoaderX(dataset, batch_size=dataset.batch_size * ngpu,
                                                    shuffle=shuffle if self.sampler is None else False,
-                                                   num_workers=2 * ngpu, pin_memory=False, sampler=self.sampler,
+                                                   num_workers=3 * ngpu, pin_memory=True, sampler=self.sampler,
                                                    collate_fn=collate_fn_with_eos_bos if include_eos_sos else collate_fn)
 
     def set_epoch(self, epoch):
