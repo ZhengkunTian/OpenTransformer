@@ -78,7 +78,7 @@ python run.py -c egs/aishell/transformer.yaml -p dp -n 2
 OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=2 run.py -c egs/aishell/transformer.yaml -p ddp -n 2
 ```
 
-# Average the parameters of the last N epochs
+## Average the parameters of the last N epochs
 ```python
 python tools/average.py you_model_expdir 50 59    #   average the models from 50-th epoch to 59-th epoch
 ```
