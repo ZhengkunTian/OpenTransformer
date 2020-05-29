@@ -4,6 +4,7 @@ import kaldiio as kio
 import numpy as np
 import torchaudio as ta
 from torch.utils.data import Dataset, DataLoader
+from prefetch_generator import BackgroundGenerator
 
 PAD = 0
 EOS = 1
@@ -309,6 +310,12 @@ def collate_fn(batch):
     return utt_ids, feature, label
 
 
+class DataLoaderX(DataLoader):
+
+    def __iter__(self):
+        return BackgroundGenerator(super().__iter__())
+
+
 class FeatureLoader(object):
     def __init__(self, dataset, shuffle=False, ngpu=1, mode='ddp', include_eos_sos=True):
         if ngpu > 1:
@@ -323,10 +330,10 @@ class FeatureLoader(object):
         else:
             self.sampler = None
 
-        self.loader = torch.utils.data.DataLoader(dataset, batch_size=dataset.batch_size * ngpu,
-                                                  shuffle=shuffle if self.sampler is None else False,
-                                                  num_workers=2 * ngpu, pin_memory=False, sampler=self.sampler,
-                                                  collate_fn=collate_fn_with_eos_bos if include_eos_sos else collate_fn)
+        self.loader = torch.utils.data.DataLoaderX(dataset, batch_size=dataset.batch_size * ngpu,
+                                                   shuffle=shuffle if self.sampler is None else False,
+                                                   num_workers=2 * ngpu, pin_memory=False, sampler=self.sampler,
+                                                   collate_fn=collate_fn_with_eos_bos if include_eos_sos else collate_fn)
 
     def set_epoch(self, epoch):
         self.sampler.set_epoch(epoch)
