@@ -2,7 +2,7 @@ import os
 import yaml
 import torch
 import argparse
-from otrans.transformer import Transformer
+from otrans.model import Transformer
 from otrans.recognizer import TransformerRecognizer
 from otrans.data import load_vocab, AudioDataset, FeatureLoader
 
