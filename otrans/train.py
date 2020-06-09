@@ -207,7 +207,7 @@ class Trainer(object):
             'epoch': epoch,
             'params': self.params,
             'model': self.model.module.state_dict() if self.ngpu > 1 else self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
+             #'optimizer': self.optimizer.state_dict(),
             'amp': amp_state_dict
         }
 
