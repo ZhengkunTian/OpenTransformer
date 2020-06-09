@@ -80,7 +80,7 @@ OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=2 run.py -
 
 ## Average the parameters of the last N epochs
 ```python
-python tools/average.py you_model_expdir 50 59    #   average the models from 50-th epoch to 59-th epoch
+python tools/average.py your_model_expdir 50 59    #   average the models from 50-th epoch to 59-th epoch
 ```
 
 ## Eval
