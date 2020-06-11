@@ -1,5 +1,7 @@
 import os
 import yaml
+import numpy as np
+import random
 import torch
 import argparse
 from otrans.model import Transformer
@@ -10,6 +12,8 @@ from otrans.data import AudioDataset
 
 def main(args):
 
+    random.seed(args.seed)
+    np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = True
