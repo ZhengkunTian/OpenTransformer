@@ -10,7 +10,7 @@ data:
   num_mel_bins: 40
   apply_cmvn: False
   normalization: True
-  spec_argument: True
+  spec_augment: True
   left_frames: 0
   right_frames: 0
   skip_frames: 0
