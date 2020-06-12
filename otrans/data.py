@@ -140,8 +140,8 @@ class AudioDataset(Dataset):
                     self.cmvns[spk_id] = path
                 print('Load CMVN Stats')
 
-        if self.params['spec_argument']:
-            print('Apply SpecArgument!')
+        if self.params['spec_augment']:
+            print('Apply SpecAugment!')
 
     def __getitem__(self, index):
         utt_id, path = self.file_list[index]
