@@ -50,8 +50,8 @@ train:
   shuffle: True
   lr: 1.0
   clip_grad: 5
-  epochs: 5
-  accum_steps: 1
+  epochs: 60
+  accum_steps: 4
   grad_noise: False
   load_model: False
   save_name: transformer
