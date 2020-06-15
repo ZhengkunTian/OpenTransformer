@@ -1,3 +1,10 @@
+"""
+@Author: Zhengkun Tian
+@Email: zhengkun.tian@outlook.com
+@Date: 2020-04-23 15:14:28
+@LastEditTime: 2020-04-23 15:16:49
+@FilePath: \OpenTransformer\otrans\data.py
+"""
 import os
 import torch
 import random
