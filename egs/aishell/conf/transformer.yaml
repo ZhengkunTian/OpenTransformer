@@ -50,7 +50,7 @@ train:
   shuffle: True
   lr: 1.0
   clip_grad: 5
-  epochs: 60
+  epochs: 80
   accum_steps: 4
   grad_noise: False
   load_model: False
