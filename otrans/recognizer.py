@@ -1,3 +1,10 @@
+"""
+@Author: Zhengkun Tian
+@Email: zhengkun.tian@outlook.com
+@Date: 2020-04-23 15:14:28
+@LastEditTime: 2020-04-23 15:16:49
+@FilePath: \OpenTransformer\otrans\recognizer.py
+"""
 import torch
 import torchaudio as ta
 from otrans.data import BOS, EOS, normalization
