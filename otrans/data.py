@@ -167,11 +167,8 @@ class AudioDataset(Dataset):
         if self.params['normalization']:
             feature = normalization(feature)
             
-        if self.params['spec_argument']:
-            try:
-                feature = spec_augment(feature)
-            except:
-                pass
+        if self.params['spec_augment']:
+            feature = spec_augment(feature)
 
         if self.left_frames > 0 or self.right_frames > 0:
             feature = concat_and_subsample(feature, left_frames=self.left_frames,
