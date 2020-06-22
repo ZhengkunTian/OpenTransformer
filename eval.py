@@ -18,7 +18,7 @@ def main(args):
             params = yaml.load(f)
 
     params['data']['shuffle'] = False
-    params['data']['spec_argument'] = False
+    params['data']['spec_augment'] = False
     params['data']['short_first'] = False
     params['data']['batch_size'] = args.batch_size
 
