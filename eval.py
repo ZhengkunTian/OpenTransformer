@@ -65,7 +65,7 @@ def main(args):
 
         for b in range(len(preds)):
             n = step * batch_size + b
-            truth = ' '.join([unit2char[i.item()] for i in targets[b][1:targets_length[b]]])
+            truth = ' '.join([unit2char[i.item()] for i in targets[b][1:targets_length[b]+1]])
             print('[%d / %d ] %s - pred : %s' % (n, totals, utt_id[b], preds[b]))
             print('[%d / %d ] %s - truth: %s' % (n, totals, utt_id[b], truth))
             writer.write(utt_id[b] + ' ' + preds[b] + '\n')
