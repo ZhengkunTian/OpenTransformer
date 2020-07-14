@@ -34,8 +34,7 @@ def load_vocab(vocab_file):
 
 
 def normalization(feature):
-    mean = torch.mean(feature)
-    std = torch.std(feature)
+    std, mean = torch.std_mean(feature, dim=0)
     return (feature - mean) / std
 
 
