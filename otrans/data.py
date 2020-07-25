@@ -44,7 +44,7 @@ def apply_cmvn(mat, stats):
     return np.divide(np.subtract(mat, mean), np.sqrt(variance))
 
 
-def spec_augment(mel_spectrogram, frequency_mask_num=1, time_mask_num=2,
+def spec_augment(mel_spectrogram, frequency_mask_num=2, time_mask_num=2,
                  frequency_masking_para=5, time_masking_para=15):
     tau = mel_spectrogram.shape[0]
     v = mel_spectrogram.shape[1]
@@ -70,32 +70,11 @@ def spec_augment(mel_spectrogram, frequency_mask_num=1, time_mask_num=2,
     return warped_mel_spectrogram
 
 
-def concat_and_subsample(features, left_frames=3, right_frames=0, skip_frames=2):
-
-    time_steps, feature_dim = features.shape
-    concated_features = np.zeros(
-        shape=[time_steps, (1+left_frames+right_frames) * feature_dim], dtype=np.float32)
-
-    concated_features[:, left_frames * feature_dim: (left_frames+1)*feature_dim] = features
-
-    for i in range(left_frames):
-        concated_features[i+1: time_steps, (left_frames-i-1)*feature_dim: (
-            left_frames-i) * feature_dim] = features[0:time_steps-i-1, :]
-
-    for i in range(right_frames):
-        concated_features[0:time_steps-i-1, (right_frames+i+1)*feature_dim: (
-            right_frames+i+2)*feature_dim] = features[i+1: time_steps, :]
-
-    return concated_features[::skip_frames+1, :]
-
-
 class AudioDataset(Dataset):
-    def __init__(self, params, name='train'):
+    def __init__(self, params, name='train', is_eval=False):
 
         self.params = params
-        self.left_frames = params['left_frames']
-        self.right_frames = params['right_frames']
-        self.skip_frames = params['skip_frames']
+        self.is_eval = is_eval
 
         self.unit2idx = load_vocab(params['vocab'])
 
@@ -146,7 +125,8 @@ class AudioDataset(Dataset):
                     self.cmvns[spk_id] = path
                 print('Load CMVN Stats')
 
-        if self.params['spec_augment']:
+        self.apply_spec_augment = self.params['spec_augment'] if not self.is_eval else False
+        if self.apply_spec_augment:
             print('Apply SpecAugment!')
 
     def __getitem__(self, index):
@@ -166,12 +146,8 @@ class AudioDataset(Dataset):
         if self.params['normalization']:
             feature = normalization(feature)
             
-        if self.params['spec_augment']:
+        if self.apply_spec_augment:
             feature = spec_augment(feature)
-
-        if self.left_frames > 0 or self.right_frames > 0:
-            feature = concat_and_subsample(feature, left_frames=self.left_frames,
-                                           right_frames=self.right_frames, skip_frames=self.skip_frames)
 
         feature_length = feature.shape[0]
         targets = self.targets_dict[utt_id]
@@ -212,7 +188,7 @@ class AudioDataset(Dataset):
         return self.params['batch_size']
 
 
-def collate_fn_with_eos_bos(batch):
+def audio_collate_fn(batch):
 
     utt_ids = [data[0] for data in batch]
     features_length = [data[2] for data in batch]
@@ -243,37 +219,65 @@ def collate_fn_with_eos_bos(batch):
     return utt_ids, inputs
 
 
-def collate_fn(batch):
+class TextDataset(Dataset):
+    def __init__(self, params, name='train', is_eval=False):
+
+        self.params = params
+        self.is_eval = is_eval
+        self.unit2idx = load_vocab(params['vocab'])
+
+        self.text_list = []
+        with open(params[name], 'r', encoding='utf-8') as t:
+            for line in t:
+                parts = line.strip().split()
+                utt_id = parts[0]
+                label = []
+                for c in parts[1:]:
+                    label.append(self.src_unit2idx[c] if c in self.unit2idx else self.unit2idx['<UNK>'])
+                self.text_list.append((utt_id, label))
+
+        self.lengths = len(self.text_list)
+
+    def __getitem__(self, index):
+        idx, seq = self.text_list[index]
+        return idx, seq, seq
+
+    def __len__(self):
+        return self.lengths
+
+    @property
+    def vocab_size(self):
+        return len(self.unit2idx)
+
+    @property
+    def idx2unit(self):
+        return {i: c for (c, i) in self.unit2idx.items()}
+
+
+def text_collate_fn(batch):
 
     utt_ids = [data[0] for data in batch]
-    features_length = [data[2] for data in batch]
-    targets_length = [data[4] for data in batch]
-    max_feature_length = max(features_length)
-    max_target_length = max(targets_length)
+    src_length = [len(data[1]) + 1 for data in batch]
+    tgt_length = [len(data[2]) + 1 for data in batch]
 
-    padded_features = []
-    padded_targets = []
+    max_src_length = max(src_length)
+    max_tgt_length = max(tgt_length) 
 
-    for _, feat, feat_len, target, target_len in batch:
-        padded_features.append(np.pad(feat, ((
-            0, max_feature_length-feat_len), (0, 0)), mode='constant', constant_values=0.0))
-        padded_targets.append(target + [PAD] * (max_target_length - target_len))
+    padded_src = []
+    padded_tgt = []
 
-    features = torch.FloatTensor(padded_features)
-    features_length = torch.IntTensor(features_length)
-    targets = torch.LongTensor(padded_targets)
-    targets_length = torch.IntTensor(targets_length)
+    for _, src_seq, tgt_seq in batch:
+        padded_src.append([BOS] + src_seq + [PAD] * (max_src_length - len(src_seq) - 1))
+        padded_tgt.append(tgt_seq + [EOS] + [PAD] * (max_tgt_length - len(tgt_seq) - 1))
 
-    feature = {
-        'inputs': features,
-        'inputs_length': features_length
+    src_seqs = torch.LongTensor(padded_src)
+    tgt_seqs = torch.LongTensor(padded_tgt)
+
+    inputs = {
+        'inputs': src_seqs,
+        'targets': tgt_seqs
     }
-
-    label = {
-        'targets': targets,
-        'targets_length': targets_length
-    }
-    return utt_ids, feature, label
+    return utt_ids, inputs
 
 
 class DataLoaderX(DataLoader):
@@ -283,23 +287,34 @@ class DataLoaderX(DataLoader):
 
 
 class FeatureLoader(object):
-    def __init__(self, dataset, shuffle=False, ngpu=1, mode='ddp', include_eos_sos=True):
-        if ngpu > 1:
-#             if mode == 'hvd':
-#                 import horovod.torch as hvd
-#                 self.sampler = torch.utils.data.distributed.DistributedSampler(dataset, num_replicas=hvd.size(),
-#                                                                                rank=hvd.rank())
-            if mode == 'ddp':
-                self.sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-            else:
-                self.sampler = None
+    def __init__(self, params, name, shuffle=False, ngpu=1, mode='dp', is_eval=False):
+
+        self.ngpu = ngpu
+        self.shuffle = False if is_eval else shuffle
+
+        self.dataset_type = params['data']['dataset_type']   # text, online, espnet
+
+        if self.dataset_type == 'text':
+            self.dataset = TextDataset(params['data'], name, is_eval=is_eval)
+            collate_fn = text_collate_fn
+        else:
+            self.dataset = AudioDataset(params['data'], name, is_eval=is_eval)
+            collate_fn = audio_collate_fn
+
+        if ngpu > 1 and mode == 'ddp':
+            self.sampler = torch.utils.data.distributed.DistributedSampler(self.dataset)
         else:
             self.sampler = None
 
-        self.loader = DataLoaderX(dataset, batch_size=dataset.batch_size * ngpu,
-                                  shuffle=shuffle if self.sampler is None else False,
-                                  num_workers=3 * ngpu, pin_memory=True, sampler=self.sampler,
-                                  collate_fn=collate_fn_with_eos_bos if include_eos_sos else collate_fn)
+        if ngpu >= 1:
+            self.batch_size *= ngpu
+
+        self.loader = DataLoaderX(
+            self.dataset, batch_size=self.batch_size,
+            shuffle=self.shuffle if self.sampler is None else False,
+            num_workers=ngpu, pin_memory=True, sampler=self.sampler,
+            collate_fn=collate_fn
+        )
 
     def set_epoch(self, epoch):
         self.sampler.set_epoch(epoch)

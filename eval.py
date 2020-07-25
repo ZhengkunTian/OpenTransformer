@@ -2,9 +2,9 @@ import os
 import yaml
 import torch
 import argparse
-from otrans.model import Transformer
+from otrans.model import Transformer, TransformerLanguageModel
 from otrans.recognizer import TransformerRecognizer
-from otrans.data import load_vocab, AudioDataset, FeatureLoader
+from otrans.data import load_vocab, FeatureLoader
 
 
 def main(args):
@@ -23,11 +23,13 @@ def main(args):
     params['data']['batch_size'] = args.batch_size
 
     expdir = os.path.join('egs', params['data']['name'], 'exp', params['train']['save_name'])
-    if args.suffix is None:
-        decode_dir = os.path.join(expdir, 'decode_%s' % args.decode_set)
-    else:
-        decode_dir = os.path.join(expdir, 'decode_%s_%s' % (args.decode_set, args.suffix))
+    decoder_set_name = 'decode_%s' % args.decode_set
+    if args.load_language_model is not None:
+        decoder_set_name += '_lm_lmw%.2f' % args.lm_weight
+    if args.suffix is not None:
+        decoder_set_name += '_%s' % args.suffix 
 
+    decode_dir = os.path.join(expdir, decoder_set_name)
     if not os.path.exists(decode_dir):
         os.makedirs(decode_dir)
 
@@ -40,16 +42,26 @@ def main(args):
     if args.ngpu > 0:
         model.cuda()
 
+    if args.load_language_model is not None:
+        lm_chkpt = torch.load(args.load_language_model)
+        lm = TransformerLanguageModel(lm_chkpt['params']['model'])
+        lm.load_state_dict(lm_chkpt['model'])
+        lm.eval()
+        if args.ngpu > 0: model.cuda()
+        print('Load pre-trained transformer language model from %s' % args.load_language_model)
+    else:
+        lm = None
+
     char2unit = load_vocab(params['data']['vocab'])
     unit2char = {i:c for c, i in char2unit.items()}
 
-    dataset = AudioDataset(params['data'], args.decode_set)
-    data_loader = FeatureLoader(dataset)
+    data_loader = FeatureLoader(params, args.decode_set)
     
-    recognizer = TransformerRecognizer(model, unit2char=unit2char, beam_width=args.beam_width,
-                                       max_len=args.max_len, penalty=args.penalty, lamda=args.lamda, ngpu=args.ngpu)
+    recognizer = TransformerRecognizer(
+        model, lm=lm, lm_weight=args.lm_weight, unit2char=unit2char, beam_width=args.beam_width,
+        max_len=args.max_len, penalty=args.penalty, lamda=args.lamda, ngpu=args.ngpu)
 
-    totals = len(dataset)
+    totals = len(data_loader.dataset)
     batch_size = params['data']['batch_size']
     writer = open(os.path.join(decode_dir, 'predict.txt'), 'w')
     for step, (utt_id, batch) in enumerate(data_loader.loader):
@@ -57,6 +69,9 @@ def main(args):
         if args.ngpu > 0:
             inputs = batch['inputs'].cuda()
             inputs_length = batch['inputs_length'].cuda()
+        else:
+            inputs = batch['inputs']
+            inputs_length = batch['inputs_length']
 
         preds = recognizer.recognize(inputs, inputs_length)
 
@@ -82,6 +97,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--penalty', type=float, default=0.6)
     parser.add_argument('-ld', '--lamda', type=float, default=5)
     parser.add_argument('-m','--load_model', type=str, default=None)
+    parser.add_argument('-lm','--load_language_model', type=str, default=None)
+    parser.add_argument('-lmw','--lm_weight', type=float, default=0.1)
     parser.add_argument('-d', '--decode_set', type=str, default='test')
     parser.add_argument('-ml', '--max_len', type=int, default=100)
     parser.add_argument('-s', '--suffix', type=str, default=None)

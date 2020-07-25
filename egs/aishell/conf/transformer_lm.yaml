@@ -1,0 +1,29 @@
+data:
+  name: aishell
+  vocab: egs/aishell/data/vocab
+  batch_size: 16
+  dataset_type: text
+  train: 'egs/aishell/data/train/character'
+model:
+  type: transformer_lm
+  d_model: 320
+  residual_dropout_rate: 0.1
+  num_blocks: 4
+  ffn_units: 1280
+  vocab_size: 4233
+  n_heads: 4
+  smoothing: 0.1
+  activation: glu
+  share_embedding: True
+train:
+  scheduler: stepwise
+  optimizer: adam
+  warmup_steps: 12000
+  shuffle: True
+  lr: 1.0
+  clip_grad: 5
+  epochs: 60
+  accum_steps: 8
+  grad_noise: False
+  load_model: False
+  save_name: transformer_lm_4layer_320x1280

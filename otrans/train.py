@@ -12,7 +12,6 @@ import math
 import time
 import torch.distributed as dist
 from otrans.utils import MeanLoss, init_logger, Visulizer, AverageMeter, Summary, map_to_cuda
-from otrans.data import FeatureLoader
 
 
 class Trainer(object):
@@ -77,14 +76,7 @@ class Trainer(object):
         else:
             self.logger.info('Train the model in CPU!')
 
-    def train(self, train_dataset, dev_dataset=None):
-
-        include_eos_sos = True
-        train_loader = FeatureLoader(train_dataset, shuffle=self.shuffle, ngpu=self.ngpu,
-                                     mode=self.parallel_mode, include_eos_sos=include_eos_sos)
-        if dev_dataset is not None:
-            dev_loader = FeatureLoader(dev_dataset, shuffle=False, ngpu=self.ngpu,
-                                       mode=self.parallel_mode, include_eos_sos=include_eos_sos)
+    def train(self, train_loader, dev_loader=None):
 
         epochs = self.params['train']['epochs']
         TrainLossNote = Summary()
@@ -108,7 +100,7 @@ class Trainer(object):
             if self.is_visual and self.local_rank == 0:
                 self.visulizer.add_scalar('train_epoch_loss', train_loss, epoch)
 
-            if dev_dataset is not None:
+            if dev_loader is not None:
                 dev_loss = self.eval(dev_loader.loader)
                 DevLossNote.update(epoch, dev_loss)
                 if self.local_rank == 0:
@@ -122,7 +114,7 @@ class Trainer(object):
             self.logger.info('Training Summary:')
             BEST_T_EPOCH, BEST_T_LOSS = TrainLossNote.best()
             self.logger.info('At the %d-st epoch of training, the model performs best (Loss:%.5f)!' % (BEST_T_EPOCH, BEST_T_LOSS))
-            if dev_dataset is not None:
+            if dev_loader is not None:
                 BEST_E_EPOCH, BEST_E_LOSS = DevLossNote.best()
                 self.logger.info('At the %d-st epoch of validation, the model performs best (Loss:%.5f)!' % (BEST_E_EPOCH, BEST_E_LOSS))
 

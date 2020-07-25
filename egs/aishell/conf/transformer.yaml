@@ -2,6 +2,7 @@ data:
   name: aishell
   vocab: egs/aishell/data/vocab
   batch_size: 16
+  dataset_type: audio # audio or text
   text: character
   train: egs/aishell/data/train
   test: egs/aishell/data/test
@@ -11,9 +12,6 @@ data:
   apply_cmvn: False
   normalization: True
   spec_augment: True
-  left_frames: 0
-  right_frames: 0
-  skip_frames: 0
   from_kaldi: False
   num_works: 4
 model:

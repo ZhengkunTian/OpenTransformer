@@ -6,7 +6,6 @@
 @FilePath: \OpenTransformer\otrans\recognizer.py
 """
 import torch
-import torchaudio as ta
 from otrans.data import BOS, EOS, normalization
 
 
@@ -48,11 +47,12 @@ def mask_finished_preds(pred, flag):
 
 
 class TransformerRecognizer(object):
-    def __init__(self, model, lm=None, beam_width=5, max_len=50, unit2char=None,
+    def __init__(self, model, lm=None, lm_weight=0.1, beam_width=5, max_len=50, unit2char=None,
                  penalty=0, lamda=5, ngpu=1):
 
         self.model = model
         self.lm = lm
+        self.lm_weight = lm_weight
         self.beam_width = beam_width
         self.max_len = max_len
         self.unit2char = unit2char
@@ -61,6 +61,7 @@ class TransformerRecognizer(object):
         self.lamda = lamda
 
         self.model.eval()
+        self.lm.eval()
         self.ngpu = ngpu
 
     def recognize(self, inputs, inputs_length):
@@ -118,18 +119,6 @@ class TransformerRecognizer(object):
 
         return results
 
-    def predict(self, wav, num_mel_bins=440, apply_normalize=True):
-        wavform, _ = ta.load_wav(wav)
-        feature = compute_fbank(wavform, num_mel_bins=num_mel_bins)
-
-        if apply_normalize:
-            feature = normalization(feature)
-
-        feature = feature.unsqueeze(0)
-        feature_length = torch.LongTensor(feature.size(1), device=feature.device)
-
-        return self.recognize(feature, feature_length)[0]
-
     def encode(self, inputs, inputs_length):
         enc_states, enc_mask = self.model.encoder(inputs, inputs_length)
         return enc_states, enc_mask
@@ -140,6 +129,11 @@ class TransformerRecognizer(object):
         batch_size = int(scores.size(0) / self.beam_width)
 
         batch_log_probs = self.model.decoder.recognize(preds, enc_state, enc_mask).detach()
+
+        if self.lm is not None:
+            batch_lm_log_probs = self.lm.predict(preds)
+            batch_lm_log_probs = batch_lm_log_probs.squeeze(1)
+            batch_log_probs = batch_log_probs + self.lm_weight * batch_lm_log_probs
 
         last_k_scores, last_k_preds = batch_log_probs.topk(self.beam_width)
 

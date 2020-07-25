@@ -34,7 +34,7 @@ def average_chkpt(datadir, start, end):
 
         for key, value in state.items():
 
-            if key in ['params', 'epoch', 'amp', 'global_step']: continue
+            if key != 'model': continue
 
             model_params = value
             model_params_keys = list(model_params.keys())
