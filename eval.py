@@ -55,7 +55,7 @@ def main(args):
     char2unit = load_vocab(params['data']['vocab'])
     unit2char = {i:c for c, i in char2unit.items()}
 
-    data_loader = FeatureLoader(params, args.decode_set)
+    data_loader = FeatureLoader(params, args.decode_set, is_eval=True)
     
     recognizer = TransformerRecognizer(
         model, lm=lm, lm_weight=args.lm_weight, unit2char=unit2char, beam_width=args.beam_width,
