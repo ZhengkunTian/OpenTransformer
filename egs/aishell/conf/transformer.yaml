@@ -3,7 +3,7 @@ data:
   vocab: egs/aishell/data/vocab
   batch_size: 16
   dataset_type: audio # audio or text
-  text: character
+  text: text
   train: egs/aishell/data/train
   test: egs/aishell/data/test
   dev: egs/aishell/data/dev
