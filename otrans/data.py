@@ -293,6 +293,7 @@ class FeatureLoader(object):
         self.shuffle = False if is_eval else shuffle
 
         self.dataset_type = params['data']['dataset_type']   # text, online, espnet
+        self.batch_size = params['data']['batch_size']
 
         if self.dataset_type == 'text':
             self.dataset = TextDataset(params['data'], name, is_eval=is_eval)
