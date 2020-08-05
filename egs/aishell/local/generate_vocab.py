@@ -35,7 +35,7 @@ if __name__ == '__main__':
     with open(vocab_out, 'w') as w:
         w.write('<PAD> 0\n')
         w.write('<S/E> 1\n')
-        w.write('<UNK>2 \n')
+        w.write('<UNK> 2\n')
         for (l, n) in vocab:
             w.write(l+' '+str(index)+'\n')
             index += 1
