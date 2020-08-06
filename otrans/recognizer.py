@@ -61,7 +61,8 @@ class TransformerRecognizer(object):
         self.lamda = lamda
 
         self.model.eval()
-        self.lm.eval()
+        if self.lm is not None:
+            self.lm.eval()
         self.ngpu = ngpu
 
     def recognize(self, inputs, inputs_length):
