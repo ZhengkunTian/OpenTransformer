@@ -16,7 +16,7 @@ def get_seq_mask(targets):
 
 class TransformerLanguageModel(nn.Module):
     def __init__(self, params):
-        super(TransformerLanguageModel, self).__init__(params)
+        super(TransformerLanguageModel, self).__init__()
 
         self.model_type = 'transformer_lm'
         self.normalize_before = False
