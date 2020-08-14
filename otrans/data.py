@@ -233,7 +233,7 @@ class TextDataset(Dataset):
                 utt_id = parts[0]
                 label = []
                 for c in parts[1:]:
-                    label.append(self.src_unit2idx[c] if c in self.unit2idx else self.unit2idx['<UNK>'])
+                    label.append(self.unit2idx[c] if c in self.unit2idx else self.unit2idx['<UNK>'])
                 self.text_list.append((utt_id, label))
 
         self.lengths = len(self.text_list)
