@@ -47,7 +47,7 @@ def main(args):
         lm = TransformerLanguageModel(lm_chkpt['params']['model'])
         lm.load_state_dict(lm_chkpt['model'])
         lm.eval()
-        if args.ngpu > 0: model.cuda()
+        if args.ngpu > 0: lm.cuda()
         print('Load pre-trained transformer language model from %s' % args.load_language_model)
     else:
         lm = None
