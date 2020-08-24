@@ -18,7 +18,7 @@ Torchaudio >= 0.3.0
 
 - Data Augmentation([SpecAugument](https://arxiv.org/abs/1904.08779))
 
-- Extract Fbank features in a online funshion
+- Extract Fbank features in a online fashion
 
 - Visualization based Tensorboard
 
