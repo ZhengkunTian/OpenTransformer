@@ -28,7 +28,7 @@ model:
   residual_dropout_rate: 0.1
   # encoder related
   feat_dim: 40
-  num_enc_blocks: 6
+  num_enc_blocks: 12
   enc_ffn_units: 1280
   enc_input_layer: conv2d
   # decoder related
