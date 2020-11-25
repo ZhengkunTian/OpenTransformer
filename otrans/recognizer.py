@@ -156,7 +156,7 @@ class TransformerRecognizer(object):
 
         # update predictions
         best_k_preds = torch.index_select(last_k_preds.view(-1), dim=-1, index=best_k_indices)
-        preds_symbol = torch.index_select(preds, dim=0, index=best_k_indices.div(self.beam_width))
+        preds_symbol = torch.index_select(preds, dim=0, index=best_k_indices.div(self.beam_width).long())
         preds_symbol = torch.cat((preds_symbol, best_k_preds.view(-1, 1)), dim=1)
 
         # finished or not
