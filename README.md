@@ -8,11 +8,11 @@ Pytorch >= 1.2.0
 
 Torchaudio >= 0.3.0
 
+Torchaudio >= 0.3.0
+
 ## To Do
 - [ ] Joint CTC and Attention Decoding (C++ Version)
 - [ ] Conformer
-
-Torchaudio >= 0.3.0
 
 ## Function
 
