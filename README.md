@@ -4,9 +4,7 @@ This is a speech-transformer model for end-to-end speech recognition.
 If you have any questions, please email to me. (zhengkun.tian@nlpr.ia.ac.cn)
 
 # Requirements
-Pytorch >= 1.2.0
-
-Torchaudio >= 0.3.0
+Pytorch >= 1.2.0 (<= 1.6.0)
 
 Torchaudio >= 0.3.0
 
