@@ -9,12 +9,14 @@
 
 stage=-1
 
-data=/data2/corpus/aishell
+data=/data3/tianzhengkun/data/aishell
 data_url=www.openslr.org/resources/33
 
 set -e
 set -u
 set -o pipefail
+
+chmod u+x local/* || exit 1;
 
 if [ ${stage} -le -1 ]; then
     ### Task dependent. You have to make data the following preparation part by yourself.

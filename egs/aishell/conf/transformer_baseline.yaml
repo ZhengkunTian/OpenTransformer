@@ -1,0 +1,99 @@
+data:
+  name: aishell
+  vocab: egs/aishell/data/vocab
+  batch_size: 16
+  dataset_type: online # kaldi, online or espnet
+  model_unit: chars
+  train:
+    feat: ['egs/aishell/data/train/wav.scp']
+    text: ['egs/aishell/data/train/text']
+    # wav-to-duration: ['egs/aishell/data/train/wav-to-duration']
+  test: 
+    feat: ['egs/aishell/data/test/wav.scp']
+    text: ['egs/aishell/data/test/text']
+  # bucket:
+  #   bucket_boundaries: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+  #   bucket_batch_size: []
+  #   rm_the_long_sents: False
+  #   audo_set_batch_size: True
+  #   max_frames_one_batch: 20000
+  #   drop_last: False
+  num_mel_bins: 40
+  normalization: True
+  spec_augment: True
+  speed_perturb: False
+  volume_perturb: False
+  gaussian_noise: 0.00
+  num_workers: 4
+  spec_augment_config:
+    freq_mask_num: 2
+    time_mask_num: 5
+    freq_mask: 0.3
+    time_mask: 0.05
+model:
+  type: speech2text
+  frontend_type: conv
+  frontend:
+    input_size: 40
+    output_size: 256
+    in_channel: 1
+    mid_channel: 32
+    out_channel: 128
+    kernel_size: [[3,3],[3,3]]
+    stride: [2, 2]
+    dropout: 0.0
+    act_func_type: 'relu'
+    front_end_layer_norm: False
+  encoder_type: transformer
+  encoder:
+    d_model: 256
+    n_heads: 4
+    d_ff: 2048
+    n_blocks: 12
+    pos_dropout: 0.0 
+    slf_attn_dropout: 0.0
+    ffn_dropout: 0.0
+    residual_dropout: 0.1
+    normalize_before: False
+    concat_after: False
+    activation: glu
+    relative_positional: True
+  decoder_type: transformer
+  decoder:
+    vocab_size: 4233
+    d_model: 256
+    n_heads: 4
+    d_ff: 2048
+    memory_dim: 256
+    n_blocks: 6
+    pos_dropout: 0.0
+    slf_attn_dropout: 0.0
+    src_attn_dropout: 0.0
+    ffn_dropout: 0.0
+    residual_dropout: 0.1
+    activation: glu
+    normalize_before: False
+    concat_after: False
+    share_embedding: False
+    relative_positional: True
+  ctc_weight: 0.0
+  smoothing: 0.1
+train:
+  optimizer_type: adam
+  optimizer:
+    lr: 0.001
+    betas: [0.9, 0.98]
+    eps: 1.0e-9
+    weight_decay: 1.0e-6
+    amsgrad: False
+  scheduler_type: transformer
+  scheduler:
+    model_size: 256
+    warmup_steps: 12000
+    factor: 1.0
+  clip_grad: 5
+  epochs: 80
+  accum_steps: 4
+  grad_noise: 0.0
+  load_model: False
+  save_name: transformer_baseline
