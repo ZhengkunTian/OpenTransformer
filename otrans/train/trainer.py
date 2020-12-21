@@ -148,7 +148,7 @@ class Trainer(object):
             
             # loss: tensor
             # axu_loss: dict {loss1: value1, loss2: value2}
-            self.model.forward_hook(self.scheduler.global_step, self.scheduler.global_epoch)
+            # self.model.forward_hook(self.scheduler.global_step, self.scheduler.global_epoch)
             loss, aux_loss = self.model(inputs, targets)
 
             loss = torch.mean(loss) / self.accum_steps
