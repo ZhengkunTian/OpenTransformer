@@ -3,28 +3,27 @@
 This is a speech-transformer model for end-to-end speech recognition.
 If you have any questions, please email to me. (zhengkun.tian@nlpr.ia.ac.cn)
 
+
 # Requirements
 Pytorch >= 1.2.0 (<= 1.6.0)
 
 Torchaudio >= 0.3.0
 
-## To Do
-- [ ] Joint CTC and Attention Decoding (C++ Version)
-- [ ] Conformer
-
 ## Function
 
-- Speech Transformer
+- Speech Transformer / Conformer
 
 - Label Smoothing
 
-- Share weights of Embedding with output softmax layer
+- Tie Weights of Embedding with output softmax layer
 
 - Data Augmentation([SpecAugument](https://arxiv.org/abs/1904.08779))
 
 - Extract Fbank features in a online fashion
 
-- Visualization based Tensorboard
+- Read the feature with the kaldi or espnet format!
+
+- Visualization based Tensorboard [Will Be Updated Soon!]
 
 - Batch Beam Search with Length Penalty
 
@@ -32,9 +31,7 @@ Torchaudio >= 0.3.0
 
 - Multiple Activation Functions in FFN
 
-- Multi GPU ([dp](https://pytorch.org/docs/stable/nn.html#dataparallel), [ddp](https://pytorch.org/docs/stable/nn.html#distributeddataparallel))
-
-- Mixed Precision Training based [apex](https://github.com/NVIDIA/apex)
+- Multi GPU 
 
 - LM Shollow Fusion
 
@@ -75,11 +72,7 @@ python run.py -c egs/aishell/conf/transformer.yaml
 ```
 - Multi GPU Training based DataParallel
 ```python
-python run.py -c egs/aishell/transformer.yaml -p dp -n 2
-```
-- Multi GPU Training based distributeddataparallel
-```python
-OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=2 run.py -c egs/aishell/transformer.yaml -p ddp -n 2
+python run.py -c egs/aishell/transformer.yaml -n 2 -g 0,1
 ```
 
 ## Average the parameters of the last N epochs

@@ -2,10 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from otrans.data import PAD
-from otrans.metrics import LabelSmoothingLoss
-from otrans.layer import TransformerEncoderLayer
-from otrans.module import PositionalEncoding
+from otrans.module.loss import LabelSmoothingLoss
+from otrans.encoder.transformer import TransformerEncoderLayer
+from otrans.module.pos import PositionalEncoding
 
+
+LOGZERO = -10000000000.0
+ZERO = 1.0e-10
 
 def get_seq_mask(targets):
     batch_size, steps = targets.size()
@@ -14,9 +17,82 @@ def get_seq_mask(targets):
     return seq_mask
 
 
-class TransformerLanguageModel(nn.Module):
+class BaseLM(nn.Module):
     def __init__(self, params):
-        super(TransformerLanguageModel, self).__init__()
+        super(BaseLM, self).__init__()
+        self.params = params
+
+    def forward(self, inputs, targets):
+        raise NotImplementedError
+
+    def set_epoch(self, epoch):
+        pass
+
+
+class RecurrentLanguageModel(BaseLM):
+    def __init__(self, params):
+        super(RecurrentLanguageModel, self).__init__(params)
+
+        self.model_type = 'recurrent_lm'
+        self.vocab_size = params['vocab_size']
+        self.share_embedding = params['share_embedding']
+        self.smoothing = params['smoothing']
+        self.num_layers = params['num_layers']
+        self.hidden_size = params['hidden_size']
+
+        self.embedding = nn.Embedding(params['vocab_size'], params['hidden_size'])
+        self.rnn = nn.LSTM(input_size=params['hidden_size'],
+                           hidden_size=params['hidden_size'],
+                           num_layers=params['num_layers'],
+                           batch_first=True,
+                           dropout=params['dropout'],
+                           bidirectional=False)
+
+        self.output_project = nn.Linear(
+            params['hidden_size'], params['vocab_size'])
+
+        if self.share_embedding:
+            assert self.embedding.weight.size() == self.output_project.weight.size()
+            self.output_project.weight = self.embedding.weight
+
+        self.crit = LabelSmoothingLoss(size=self.vocab_size, smoothing=self.smoothing, 
+                                       padding_idx=PAD)
+
+    def forward(self, inputs, targets):
+
+        emb_inputs = self.embedding(inputs)
+
+        self.rnn.flatten_parameters()
+        outputs, _ = self.rnn(emb_inputs)
+
+        logits = self.output_project(outputs)
+
+        loss = self.crit(logits, targets)
+        return loss, None
+
+    def predict(self, pred, hidden=None):
+
+        emb_inputs = self.embedding(pred)
+        outputs, hidden = self.rnn(emb_inputs, hidden)
+        logits = self.output_project(outputs)
+        log_probs = F.log_softmax(logits, dim=-1)
+        return log_probs, hidden
+
+    def save_checkpoint(self, params, name):
+        checkpoint = {
+            'params': params,
+            'model': self.state_dict()
+            }
+
+        torch.save(checkpoint, name)
+
+    def init_hidden_states(self, batch_size, device):
+        return torch.zeros([self.num_layers, batch_size, self.hidden_size]).to(device)
+
+
+class TransformerLanguageModel(BaseLM):
+    def __init__(self, params):
+        super(TransformerLanguageModel, self).__init__(params)
 
         self.model_type = 'transformer_lm'
         self.normalize_before = False
@@ -46,7 +122,7 @@ class TransformerLanguageModel(nn.Module):
 
         self.crit = LabelSmoothingLoss(size=self.vocab_size, smoothing=self.smoothing, padding_idx=PAD)
 
-    def forward(self, inputs, targets, pitchs=None):
+    def forward(self, inputs, targets):
 
         dec_mask = get_seq_mask(inputs)
         dec_output = self.embedding(inputs)
@@ -61,9 +137,9 @@ class TransformerLanguageModel(nn.Module):
         logits = self.output_project(dec_output)
         loss = self.crit(logits, targets)
 
-        return loss
+        return loss, None
 
-    def predict(self, targets):
+    def predict(self, targets, last_frame=True):
 
         dec_output = self.embedding(targets)
         dec_output = self.pos_embedding(dec_output)
@@ -78,5 +154,17 @@ class TransformerLanguageModel(nn.Module):
 
         logits = self.output_project(dec_output)
 
-        log_probs = F.log_softmax(logits[:, -1, :].unsqueeze(1), dim=-1)
+        if last_frame:
+            log_probs = F.log_softmax(logits[:, -1, :].unsqueeze(1), dim=-1)
+        else:
+            log_probs = F.log_softmax(logits, dim=-1)
+
         return log_probs
+
+    def save_checkpoint(self, params, name):
+        checkpoint = {
+            'params': params,
+            'model': self.state_dict()
+            }
+
+        torch.save(checkpoint, name)
