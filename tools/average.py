@@ -61,7 +61,14 @@ def average_chkpt(datadir, start, end):
         averaged_params[key] = {}
         for k, v in states.items():
             averaged_params[key][k] = v
-            averaged_params[key][k].div_(num_models)
+            try:
+                averaged_params[key][k].div_(num_models)
+            except:
+                if 'batch_norm.num_batches_tracked' in k:
+                    averaged_params[key][k] = torch.div(averaged_params[key][k], num_models).long()
+                else:
+                    print('Key: %s  Tensor: %s' % (key, k))
+                    raise ValueError
     
         new_state[key] = averaged_params[key]
 
