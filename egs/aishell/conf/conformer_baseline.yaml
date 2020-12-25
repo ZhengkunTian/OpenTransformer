@@ -37,7 +37,7 @@ model:
     input_size: 40
     output_size: 256
     in_channel: 1
-    mid_channel: 32
+    mid_channel: 64
     out_channel: 128
     kernel_size: [[3,3],[3,3]]
     stride: [2, 2]
@@ -47,8 +47,8 @@ model:
   encoder_type: conformer
   encoder:
     d_model: 256
-    d_ff: 1024
-    cov_kernel_size: 3
+    d_ff: 2048
+    cov_kernel_size: 5
     n_heads: 4
     nblocks: 12
     pos_dropout: 0.0
@@ -77,8 +77,8 @@ model:
     activation: glu
     normalize_before: False
     concat_after: False
-    share_embedding: False
-    relative_positional: True
+    share_embedding: True
+    relative_positional: False
   ctc_weight: 0.0
   smoothing: 0.1
 train:
