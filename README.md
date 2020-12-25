@@ -9,6 +9,9 @@ Pytorch >= 1.2.0 (<= 1.6.0)
 
 Torchaudio >= 0.3.0
 
+## TO DO
+- [ ] Reduce the redundant computation by cache the previous states during inference
+
 ## Function
 
 - Speech Transformer / Conformer
