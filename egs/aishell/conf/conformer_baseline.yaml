@@ -99,5 +99,4 @@ train:
   accum_steps: 4
   grad_noise: 0.0
   load_model: False
-  weight_decay: 1.0e-6
   save_name: conformer_transformer_baseline
