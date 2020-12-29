@@ -10,6 +10,7 @@ from otrans.module.pos import PositionalEncoding
 LOGZERO = -10000000000.0
 ZERO = 1.0e-10
 
+
 def get_seq_mask(targets):
     batch_size, steps = targets.size()
     seq_mask = torch.ones([batch_size, steps, steps], device=targets.device)
@@ -60,14 +61,14 @@ class RecurrentLanguageModel(BaseLM):
 
     def forward(self, inputs, targets):
 
-        emb_inputs = self.embedding(inputs)
+        emb_inputs = self.embedding(inputs['inputs'])
 
         self.rnn.flatten_parameters()
         outputs, _ = self.rnn(emb_inputs)
 
         logits = self.output_project(outputs)
 
-        loss = self.crit(logits, targets)
+        loss = self.crit(logits, targets['targets'])
         return loss, None
 
     def predict(self, pred, hidden=None):
@@ -105,9 +106,9 @@ class TransformerLanguageModel(BaseLM):
 
         self.blocks = nn.ModuleList([
             TransformerEncoderLayer(
-                params['n_heads'], params['d_model'], params['ffn_units'],
-                slf_attn_dropout_rate=0.0, ffn_dropout_rate=0.0,
-                residual_dropout_rate=params['residual_dropout_rate'],
+                params['n_heads'], params['d_model'], params['d_ff'],
+                slf_attn_dropout=0.0, ffn_dropout=0.0,
+                residual_dropout=params['residual_dropout'],
                 normalize_before=False, concat_after=False, activation='glu') for _ in range(self.num_blocks)
         ])
 
@@ -124,18 +125,18 @@ class TransformerLanguageModel(BaseLM):
 
     def forward(self, inputs, targets):
 
-        dec_mask = get_seq_mask(inputs)
-        dec_output = self.embedding(inputs)
+        dec_output = self.embedding(inputs['inputs'])
+        dec_mask = get_seq_mask(inputs['inputs'])
         dec_output = self.pos_embedding(dec_output)
 
         for _, block in enumerate(self.blocks):
-            dec_output, dec_mask = block(dec_output, dec_mask)
+            dec_output, _ = block(dec_output, dec_mask)
 
         if self.normalize_before:
             dec_output = self.after_norm(dec_output)
 
         logits = self.output_project(dec_output)
-        loss = self.crit(logits, targets)
+        loss = self.crit(logits, targets['targets'])
 
         return loss, None
 

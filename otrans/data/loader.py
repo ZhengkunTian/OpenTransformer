@@ -43,7 +43,7 @@ def text_collate_fn(batch):
 
         padded_target_len = max_tgt_length - len(tgt_seq)
         padded_tgt.append(tgt_seq + [EOS] + [PAD] * padded_target_len)
-        padded_target_mask.append([1] * (len(tgt_length) + 1) + [0] * padded_target_len)
+        padded_target_mask.append([1] * (len(tgt_seq) + 1) + [0] * padded_target_len)
 
 
     src_seqs = torch.LongTensor(padded_src)

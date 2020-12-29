@@ -10,20 +10,20 @@ from torch.utils.data import Dataset
 
 
 class TextDataset(Dataset):
-    def __init__(self, params, name='train', is_eval=False):
+    def __init__(self, params, datadict, is_eval=False):
 
         self.params = params
         self.is_eval = is_eval
         self.src_unit2idx = load_vocab(params['src_vocab'])
         self.tgt_unit2idx = load_vocab(params['tgt_vocab'])
-        self.reverse = params['reverse']
+        self.reverse = params['reverse'] if 'reverse' in params else False
 
         if self.reverse:
             logging.info('Reverse the src and tgt sequence!')
 
         self.src_list = []
         self.tgt_dict = {}
-        for src_file in params[name]['src']:
+        for src_file in datadict['src']:
             with open(src_file, 'r', encoding='utf-8') as t:
                 for line in t:
                     parts = line.strip().split()
@@ -33,7 +33,7 @@ class TextDataset(Dataset):
                         label.append(self.src_unit2idx[c] if c in self.src_unit2idx else self.src_unit2idx[UNK_TOKEN])
                     self.src_list.append((utt_id, label))
 
-        for tgt_file in params[name]['tgt']:
+        for tgt_file in datadict['tgt']:
             with open(tgt_file, 'r', encoding='utf-8') as t:
                 for line in t:
                     parts = line.strip().split()
