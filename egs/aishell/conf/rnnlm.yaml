@@ -9,14 +9,13 @@ data:
     src: ['egs/aishell/data/train/text']
     tgt: ['egs/aishell/data/train/text']
 model:
-  type: transformer_lm
+  type: rnn_lm
   vocab_size: 4233
-  num_blocks: 6
-  d_model: 256
-  n_heads: 4
-  d_ff: 1024
+  num_layers: 2
+  hidden_size: 1024
   residual_dropout: 0.1
   smoothing: 0.1
+  dropout: 0.1
   share_embedding: True
 train:
   optimizer_type: adam
@@ -26,14 +25,14 @@ train:
     eps: 1.0e-9
     weight_decay: 1.0e-6
     amsgrad: False
-  scheduler_type: transformer
+  scheduler_type: step-linear
   scheduler:
-    model_size: 256
-    warmup_steps: 12000
-    factor: 1.0
+    final_step: 100000
+    start_lr: 1.0e-3
+    final_lr: 1.0e-6
   clip_grad: 5
   epochs: 60
   accum_steps: 4
   grad_noise: 0.0
   load_model: False
-  save_name: transformer_lm_baseline
+  save_name: rnn_lm_baseline
