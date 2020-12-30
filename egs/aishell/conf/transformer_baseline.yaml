@@ -28,8 +28,8 @@ data:
   spec_augment_config:
     freq_mask_num: 2
     time_mask_num: 5
-    freq_mask: 0.3
-    time_mask: 0.05
+    freq_mask_rate: 0.3
+    time_mask_rate: 0.05
 model:
   type: speech2text
   frontend_type: conv
