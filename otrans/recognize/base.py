@@ -1,5 +1,5 @@
 import torch
-from oasr.data import EOS, PAD
+from otrans.data import EOS, PAD
 
 
 class Recognizer():
