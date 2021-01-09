@@ -2,6 +2,7 @@ import torch
 from otrans.data import EOS, BOS
 from otrans.recognize.base import Recognizer
 
+from packaging import version
 
 class SpeechToTextRecognizer(Recognizer):
     def __init__(self, model, lm=None, lm_weight=0.1, ctc_weight=0.0, beam_width=5, nbest=1,
@@ -80,6 +81,7 @@ class SpeechToTextRecognizer(Recognizer):
             sorted_scores, offset_indices = torch.sort(scores, dim=-1, descending=True)
 
             base_indices = torch.arange(b, dtype=torch.long, device=offset_indices.get_device()) * self.beam_width
+            base_indices = torch.arange(b, dtype=torch.long, device=offset_indices.device) * self.beam_width
             base_indices = base_indices.unsqueeze(1).repeat([1, self.beam_width]).view(-1)
             preds = preds.view(b * self.beam_width, -1)
             indices = offset_indices.view(-1) + base_indices
@@ -122,6 +124,7 @@ class SpeechToTextRecognizer(Recognizer):
         scores = scores.view(-1, 1)
 
         device = scores.get_device()
+        device = scores.device
         base_k_indices = torch.arange(batch_size, device=device).view(-1, 1).repeat([1, self.beam_width])
         base_k_indices *= self.beam_width ** 2
         best_k_indices = base_k_indices.view(-1) + offset_k_indices.view(-1)
@@ -129,8 +132,13 @@ class SpeechToTextRecognizer(Recognizer):
         # update predictions
         best_k_preds = torch.index_select(
             last_k_preds.view(-1), dim=-1, index=best_k_indices)
+        if version.parse(torch.__version__) < version.parse('1.6.0'):
+            preds_index = best_k_indices.div(self.beam_width)
+        else:
+            preds_index = best_k_indices.floor_divide(self.beam_width)
         preds_symbol = torch.index_select(
             preds, dim=0, index=best_k_indices.div(self.beam_width))
+            preds, dim=0, index=preds_index)
         preds_symbol = torch.cat(
             (preds_symbol, best_k_preds.view(-1, 1)), dim=1)
 
