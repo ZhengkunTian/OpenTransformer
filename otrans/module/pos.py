@@ -25,6 +25,7 @@ class PositionalEncoding(nn.Module):
         self.dropout = nn.Dropout(p=dropout_rate)
         self.pe = None
         self.extend_pe(torch.tensor(0.0).expand(1, max_len))
+        self.mid_len = int(max_len//2)
 
     def extend_pe(self, x):
         """Reset the positional encodings."""
@@ -180,11 +181,8 @@ class RelPositionalEncoding(PositionalEncoding):
         """
         self.extend_pe(x)
         x = x * self.xscale
-        pos_emb = self.pe[:, : x.size(1)]
+        ipt_length = x.size(1)
+        # set position 0 at self.mid_len
+        # relative position has range [-ipt_len+1, ipt_len]
+        pos_emb = self.pe[:, self.mid_len-ipt_length+1: self.mid_len+ipt_length]
         return self.dropout(x), self.dropout(pos_emb)
-
-    def inference(self, x, startid=0):
-        self.extend_pe(x)
-        x = x * self.xscale
-        pos_emb = self.pe[:, startid:startid+x.size(1)]
-        return x, pos_emb

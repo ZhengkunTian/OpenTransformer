@@ -184,26 +184,17 @@ class MultiHeadedSelfAttentionWithRelPos(MultiHeadedSelfAttention):
         torch.nn.init.xavier_normal_(self.posu)
         torch.nn.init.xavier_normal_(self.posv)
 
-    def _shift(self, x, zero_triu=False):
+    def _shift(self, x):
         """Compute relative positinal encoding.
         Args:
-            x (torch.Tensor): Input tensor (batch, nheads, time, size).
-            zero_triu (bool): If true, return the lower triangular part of the matrix.
+            x (torch.Tensor): Input tensor (batch, nheads, query_len, 2*query_len-1).
         Returns:
-            torch.Tensor: Output tensor.
+            torch.Tensor: Output tensor (batch, nheads, query_len, query_len).
         """
-        b, nh, t, v = x.size()
-        zero_pad = torch.zeros((b, nh, t, 1), device=x.device, dtype=x.dtype)
-        x_padded = torch.cat([zero_pad, x], dim=-1) # (b, nh, t, v+1)
-
-        x_padded = x_padded.view(b, nh, v+1, t) # (b, nh, v+1, t)
-        x = x_padded[:, :, 1:].view_as(x)
-
-        if zero_triu:
-            ones = torch.ones((t, v))
-            x = x * torch.tril(ones, v - t)[None, None, :, :]
-
-        return x
+        idx = torch.arange(0, x.size(2), device=x.device)
+        rel_pos_idx = idx[None] - idx[:,None] # shape [query_len, query_len] 
+        x_shift = torch.gather(x, dim=3, index=rel_pos_idx)
+        return x_shift
 
     def forward(self, x, mask, pos):
         """

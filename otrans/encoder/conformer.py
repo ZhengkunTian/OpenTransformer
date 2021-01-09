@@ -140,7 +140,7 @@ class ConformerEncoder(BaseEncoder):
 
     def inference(self, x, mask, cache=None):
 
-        x, pos = self.posemb.inference(x)
+        x, pos = self.posemb(x)
 
         x.masked_fill_(~mask.unsqueeze(2), 0.0)
 
