@@ -2,6 +2,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from otrans.model.frontend import BuildFrontEnd
 from otrans.model.base import BaseModel
 from otrans.encoder import BuildEncoder
 from otrans.data import BLK
@@ -69,20 +70,29 @@ class CTCModel(BaseModel):
     def __init__(self, params):
         super(CTCModel, self).__init__()
 
+        self.frontend = BuildFrontEnd[params['frontend_type']](**params['frontend'])
+        logger.info('Build a %s frontend!' % params['frontend_type'])
         self.encoder = BuildEncoder[params['encoder_type']](**params['encoder'])
+        logger.info('Build a %s encoder!' % params['encoder_type'])
 
         self.assistor = CTCAssistor(
             hidden_size=params['encoder_output_size'],
             vocab_size=params['vocab_size'],
             lookahead_steps=params['lookahead_steps'] if 'lookahead_steps' in params else -1)
 
-    def forward(self, inputs, inputs_length, targets, targets_length):
+    def forward(self, inputs, targets):
 
-        memory, memory_mask = self.encoder(inputs, inputs_length)
+        enc_inputs = inputs['inputs']
+        enc_mask = inputs['mask']
 
-        memory_length = torch.sum(memory_mask.squeeze(1), dim=-1)
-        targets_out = targets[:, 1:].clone()
-        loss = self.assistor(memory, memory_length, targets_out, targets_length)
+        truth = targets['targets']
+        truth_length = targets['targets_length']
+
+        enc_inputs, enc_mask = self.frontend(enc_inputs, enc_mask)
+        memory, memory_mask, _ = self.encoder(enc_inputs, enc_mask)
+
+        memory_length = torch.sum(memory_mask, dim=-1)
+        loss = self.assistor(memory, memory_length, truth[:, 1:-1], truth_length.add(-1))
         return loss, None
 
     def inference(self, inputs, inputs_length):
@@ -113,6 +123,7 @@ class CTCModel(BaseModel):
     def save_checkpoint(self, params, name):
         checkpoint = {
             'params': params,
+            'frontend', self.frontend.state_dict(),
             'encoder': self.encoder.state_dict(),
             'ctc': self.assistor.state_dict()
             }
