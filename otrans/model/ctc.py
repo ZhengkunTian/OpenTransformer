@@ -2,7 +2,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from otrans.model.frontend import BuildFrontEnd
+from otrans.frontend import BuildFrontEnd
 from otrans.model.base import BaseModel
 from otrans.encoder import BuildEncoder
 from otrans.data import BLK
@@ -123,7 +123,7 @@ class CTCModel(BaseModel):
     def save_checkpoint(self, params, name):
         checkpoint = {
             'params': params,
-            'frontend', self.frontend.state_dict(),
+            'frontend': self.frontend.state_dict(),
             'encoder': self.encoder.state_dict(),
             'ctc': self.assistor.state_dict()
             }
