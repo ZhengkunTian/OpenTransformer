@@ -11,7 +11,7 @@ from otrans.encoder.base import BaseEncoder
 from otrans.module.ffn import PositionwiseFeedForward
 from otrans.module.attention import MultiHeadedSelfAttentionWithRelPos, MultiHeadedSelfAttention
 from otrans.module.conformer import ConformerConvolutionModule
-from otrans.module.pos import MixedPositionalEncoding, RelPositionalEncoding
+from otrans.module.pos import PositionalEncoding
 
 
 logger = logging.getLogger(__name__)
@@ -109,10 +109,7 @@ class ConformerEncoder(BaseEncoder):
 
         self.relative_positional = relative_positional
 
-        if self.relative_positional:
-            self.posemb = RelPositionalEncoding(d_model, pos_dropout)
-        else:
-            self.posemb = MixedPositionalEncoding(d_model, pos_dropout)
+        self.pos_emb = PositionalEncoding(d_model, pos_dropout)
 
         self.blocks = nn.ModuleList(
             [
@@ -125,30 +122,36 @@ class ConformerEncoder(BaseEncoder):
 
         self.output_size = d_model
 
-    def forward(self, x, mask):
+    def forward(self, inputs, mask):
         
-        x, pos = self.posemb(x)
+        if self.relative_positional:
+            enc_output = inputs
+            # [1, 2T - 1]
+            position = torch.arange(-(inputs.size(1)-1), inputs.size(1), device=inputs.device).reshape(1, -1)
+            pos = self.pos_emb._embedding_from_positions(position)
+        else:  
+            enc_output, pos = self.pos_emb(inputs)
 
-        x.masked_fill_(~mask.unsqueeze(2), 0.0)
+        enc_output.masked_fill_(~mask.unsqueeze(2), 0.0)
 
         attn_weights = {}
         for i, block in enumerate(self.blocks):
-            x, attn_weight = block(x, mask, pos)
+            enc_output, attn_weight = block(enc_output, mask, pos)
             attn_weights['enc_block_%d' % i] = attn_weight
 
-        return x, mask, attn_weights
+        return enc_output, mask, attn_weights
 
-    def inference(self, x, mask, cache=None):
+    # def inference(self, x, mask, cache=None):
 
-        x, pos = self.posemb.inference(x)
+    #     x, pos = self.posemb.inference(x)
 
-        x.masked_fill_(~mask.unsqueeze(2), 0.0)
+    #     x.masked_fill_(~mask.unsqueeze(2), 0.0)
 
-        attn_weights = {}
-        new_caches = []
-        for i, block in enumerate(self.blocks):
-            x, new_cache, attn_weight = block.inference(x, mask, pos, cache[i] if isinstance(cache, list) else cache)
-            new_caches.append(new_cache)
-            attn_weights['enc_block_%d' % i] = attn_weight
+    #     attn_weights = {}
+    #     new_caches = []
+    #     for i, block in enumerate(self.blocks):
+    #         x, new_cache, attn_weight = block.inference(x, mask, pos, cache[i] if isinstance(cache, list) else cache)
+    #         new_caches.append(new_cache)
+    #         attn_weights['enc_block_%d' % i] = attn_weight
 
-        return x, mask, new_caches, attn_weights
+    #     return x, mask, new_caches, attn_weights

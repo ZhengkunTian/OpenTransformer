@@ -114,7 +114,7 @@ class FeatureLoader(object):
 
         self.ngpu = ngpu
         self.shuffle = False if is_eval else True
-        self.num_workers = params['data']['num_workers'] if 'num_workers' in params else ngpu
+        self.num_workers = params['data']['num_workers'] if 'num_workers' in params['data'] else ngpu
 
         self.dataset_type = params['data']['dataset_type']   # text, online, espnet
         datadict = params['data'][name]

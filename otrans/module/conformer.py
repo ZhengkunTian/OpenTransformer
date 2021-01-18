@@ -57,111 +57,111 @@ class ConformerConvolutionModule(nn.Module):
         return x
 
 
-class UniDirectionalConformerConvolutionModule(nn.Module):
-    def __init__(self, channels, kernel_size, bias=True, dropout=0.0):
-        super(UniDirectionalConformerConvolutionModule, self).__init__()
+# class UniDirectionalConformerConvolutionModule(nn.Module):
+#     def __init__(self, channels, kernel_size, bias=True, dropout=0.0):
+#         super(UniDirectionalConformerConvolutionModule, self).__init__()
 
-        self.kernel_size = kernel_size
+#         self.kernel_size = kernel_size
 
-        self.pointwise_conv1 = nn.Linear(channels, 2 * channels, bias=bias)
+#         self.pointwise_conv1 = nn.Linear(channels, 2 * channels, bias=bias)
 
-        self.depthwise_conv = nn.Conv1d(
-            channels,
-            channels,
-            kernel_size,
-            stride=1,
-            padding=0,
-            groups=channels,
-            bias=bias
-        )
+#         self.depthwise_conv = nn.Conv1d(
+#             channels,
+#             channels,
+#             kernel_size,
+#             stride=1,
+#             padding=0,
+#             groups=channels,
+#             bias=bias
+#         )
 
-        self.batch_norm = nn.BatchNorm1d(channels)
+#         self.batch_norm = nn.BatchNorm1d(channels)
 
-        self.pointwise_conv2 = nn.Linear(channels, channels, bias=True)
+#         self.pointwise_conv2 = nn.Linear(channels, channels, bias=True)
 
-        self.dropout = nn.Dropout(dropout)
+#         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, mask):
-        """
-        Args:
-            x: [batch_size, time, channels]
-            mask: [batch_size, time]
-        """
-        mask = mask.unsqueeze(2).repeat([1, 1, x.size(-1)])
+#     def forward(self, x, mask):
+#         """
+#         Args:
+#             x: [batch_size, time, channels]
+#             mask: [batch_size, time]
+#         """
+#         mask = mask.unsqueeze(2).repeat([1, 1, x.size(-1)])
         
-        x = self.pointwise_conv1(x)
-        x = F.glu(x)
-        x.masked_fill_(~mask, 0.0)
+#         x = self.pointwise_conv1(x)
+#         x = F.glu(x)
+#         x.masked_fill_(~mask, 0.0)
 
-        x = F.pad(x, pad=(0, 0, self.kernel_size - 1, 0), value=0.0).transpose(1, 2)
-        x = self.depthwise_conv(x)
-        x = self.batch_norm(x)
-        x = x * torch.sigmoid(x) # swish
-        x = x.transpose(1, 2)
+#         x = F.pad(x, pad=(0, 0, self.kernel_size - 1, 0), value=0.0).transpose(1, 2)
+#         x = self.depthwise_conv(x)
+#         x = self.batch_norm(x)
+#         x = x * torch.sigmoid(x) # swish
+#         x = x.transpose(1, 2)
 
-        x = self.pointwise_conv2(x)
-        x.masked_fill_(~mask, 0.0)
+#         x = self.pointwise_conv2(x)
+#         x.masked_fill_(~mask, 0.0)
 
-        return x
+#         return x
 
-    def inference(self):
-        raise NotImplementedError
+#     def inference(self):
+#         raise NotImplementedError
 
 
-class DynamicContextConformerConvolutionModule(nn.Module):
-    def __init__(self, channels, kernel_size, bias=True, dropout=0.0, right_context=0):
-        super(DynamicContextConformerConvolutionModule, self).__init__()
+# class DynamicContextConformerConvolutionModule(nn.Module):
+#     def __init__(self, channels, kernel_size, bias=True, dropout=0.0, right_context=0):
+#         super(DynamicContextConformerConvolutionModule, self).__init__()
 
-        self.kernel_size = kernel_size
-        assert kernel_size % 2 == 1
-        assert right_context >= 0
-        self.right_context = right_context
+#         self.kernel_size = kernel_size
+#         assert kernel_size % 2 == 1
+#         assert right_context >= 0
+#         self.right_context = right_context
 
-        self.pointwise_conv1 = nn.Linear(channels, 2 * channels, bias=bias)
+#         self.pointwise_conv1 = nn.Linear(channels, 2 * channels, bias=bias)
 
-        self.depthwise_conv = nn.Conv1d(
-            channels,
-            channels,
-            kernel_size,
-            stride=1,
-            padding=0,
-            groups=channels,
-            bias=bias
-        )
+#         self.depthwise_conv = nn.Conv1d(
+#             channels,
+#             channels,
+#             kernel_size,
+#             stride=1,
+#             padding=0,
+#             groups=channels,
+#             bias=bias
+#         )
 
-        self.batch_norm = nn.BatchNorm1d(channels)
+#         self.batch_norm = nn.BatchNorm1d(channels)
 
-        self.pointwise_conv2 = nn.Linear(channels, channels, bias=True)
+#         self.pointwise_conv2 = nn.Linear(channels, channels, bias=True)
 
-        self.dropout = nn.Dropout(dropout)
+#         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, mask=None, right_context=0):
-        """
-        Args:
-            x: [batch_size, time, channels]
-            mask: [batch_size, time]
-        """
-        if mask is not None:
-            mask = mask.unsqueeze(2).repeat([1, 1, x.size(-1)])
+#     def forward(self, x, mask=None, right_context=0):
+#         """
+#         Args:
+#             x: [batch_size, time, channels]
+#             mask: [batch_size, time]
+#         """
+#         if mask is not None:
+#             mask = mask.unsqueeze(2).repeat([1, 1, x.size(-1)])
         
-        x = self.pointwise_conv1(x)
-        x = F.glu(x)
-        if mask is not None:
-            x.masked_fill_(~mask, 0.0)
+#         x = self.pointwise_conv1(x)
+#         x = F.glu(x)
+#         if mask is not None:
+#             x.masked_fill_(~mask, 0.0)
 
-        if right_context == 0:
-            right_context = self.right_context
-        x = F.pad(x, pad=(0, 0, self.kernel_size - right_context - 1, right_context), value=0.0).transpose(1, 2)
-        x = self.depthwise_conv(x)
-        x = self.batch_norm(x)
-        x = x * torch.sigmoid(x) # swish
-        x = x.transpose(1, 2)
+#         if right_context == 0:
+#             right_context = self.right_context
+#         x = F.pad(x, pad=(0, 0, self.kernel_size - right_context - 1, right_context), value=0.0).transpose(1, 2)
+#         x = self.depthwise_conv(x)
+#         x = self.batch_norm(x)
+#         x = x * torch.sigmoid(x) # swish
+#         x = x.transpose(1, 2)
 
-        x = self.pointwise_conv2(x)
-        if mask is not None:
-            x.masked_fill_(~mask, 0.0)
+#         x = self.pointwise_conv2(x)
+#         if mask is not None:
+#             x.masked_fill_(~mask, 0.0)
 
-        return x
+#         return x
 
-    def inference(self):
-        raise NotImplementedError
+#     def inference(self):
+#         raise NotImplementedError

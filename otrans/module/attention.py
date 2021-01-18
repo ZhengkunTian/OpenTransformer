@@ -173,44 +173,46 @@ class MultiHeadedCrossAttention(BasedAttention):
         return context, attn_weights, cache
 
 
-class MultiHeadedSelfAttentionWithRelPos(MultiHeadedSelfAttention):
+class MultiHeadedSelfAttentionWithRelPos(BasedAttention):
     def __init__(self, n_heads, d_model, dropout_rate=0.0, share_qvk_proj=False):
         super(MultiHeadedSelfAttentionWithRelPos, self).__init__(n_heads, d_model, dropout_rate, share_qvk_proj)
 
+        self.d_model = d_model
+        self.share_qvk_proj = share_qvk_proj
+        self.nheads = n_heads
+        self.d_k = d_model // n_heads
+
+        self.qvk_proj = nn.Linear(d_model, d_model if self.share_qvk_proj else d_model * 3)
+
         self.pos_proj = nn.Linear(d_model, d_model, bias=False)
-        self.posu = nn.Parameter(torch.Tensor(n_heads, self.d_k))
-        self.posv = nn.Parameter(torch.Tensor(n_heads, self.d_k))
+        self.posu = nn.Parameter(torch.Tensor(1, 1, n_heads, self.d_k))
+        self.posv = nn.Parameter(torch.Tensor(1, 1, n_heads, self.d_k))
 
         torch.nn.init.xavier_normal_(self.posu)
         torch.nn.init.xavier_normal_(self.posv)
 
-    def _shift(self, x, zero_triu=False):
+    def _shift(self, matrix_bd):
         """Compute relative positinal encoding.
         Args:
-            x (torch.Tensor): Input tensor (batch, nheads, time, size).
-            zero_triu (bool): If true, return the lower triangular part of the matrix.
+            matrix_bd: [b, nh, t, 2T - 1]
+            right_context: -1
         Returns:
             torch.Tensor: Output tensor.
         """
-        b, nh, t, v = x.size()
-        zero_pad = torch.zeros((b, nh, t, 1), device=x.device, dtype=x.dtype)
-        x_padded = torch.cat([zero_pad, x], dim=-1) # (b, nh, t, v+1)
 
-        x_padded = x_padded.view(b, nh, v+1, t) # (b, nh, v+1, t)
-        x = x_padded[:, :, 1:].view_as(x)
+        b, nh, t, T = matrix_bd.size()
+        rel_pos = torch.arange(0, t, dtype=torch.long, device=matrix_bd.device)
+        rel_pos = (rel_pos[None] - rel_pos[:, None]).reshape(1, 1, t, t) + (t - 1)
+        matrix_bd_shifted = torch.gather(matrix_bd, dim=3, index=rel_pos.repeat(b, nh, 1, 1))
 
-        if zero_triu:
-            ones = torch.ones((t, v))
-            x = x * torch.tril(ones, v - t)[None, None, :, :]
-
-        return x
+        return matrix_bd_shifted
 
     def forward(self, x, mask, pos):
         """
         Args:
             x: [batch_size, time, size]
             mask: [batch_size, 1, time]
-            pos: positional embedding [batch_size, time, size]
+            pos: positional embedding [batch_size, 2 * time - 1, size]
         """
 
         x = self.qvk_proj(x)
@@ -244,42 +246,6 @@ class MultiHeadedSelfAttentionWithRelPos(MultiHeadedSelfAttention):
 
         return context, attn_weights
 
-
-    def inference(self, x, mask, pos, cache):
-        """
-        Args:
-            x: [batch_size, time, size]
-            mask: [batch_size, 1, time]
-            pos: positional embedding [batch_size, time, size]
-        """
-
-        x = self.qvk_proj(x)
-
-        if self.share_qvk_proj:
-            query = key = value = x
-        else:
-            query, key, value = torch.split(x, self.d_model, dim=-1)
-
-        batch_size = x.size(0)
-        query = query.reshape(batch_size, -1, self.nheads, self.d_k)
-        key = key.reshape(batch_size, -1, self.nheads, self.d_k).transpose(1, 2)
-        value = value.reshape(batch_size, -1, self.nheads, self.d_k).transpose(1, 2)
-
-        bpos = pos.size(0)
-        pos = self.pos_proj(pos).reshape(bpos, -1, self.nheads, self.d_k).transpose(1, 2)
-
-        query_with_bias_u = query + self.posu
-        query_with_bias_u = query_with_bias_u.transpose(1, 2)
-
-        query_with_bias_v = query + self.posv
-        query_with_bias_v = query_with_bias_v.transpose(1, 2)
-
-        matrix_ac = torch.matmul(query_with_bias_u, key.transpose(-2, -1))
-
-        matrix_bd = torch.matmul(query_with_bias_v, pos.transpose(-2, -1))
-        matrix_bd = self._shift(matrix_bd)
-
-        scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)
-        context, attn_weights = self.compute_context(value, scores, mask.unsqueeze(1))
-
+    def inference(self, x, mask, pos, cache=None):
+        context, attn_weights = self.forward(x, mask, pos)
         return context, attn_weights, cache
