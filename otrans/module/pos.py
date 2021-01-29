@@ -10,7 +10,6 @@ import torch.nn as nn
 
 class PositionalEncoding(nn.Module):
     """Positional encoding."""
-
     def __init__(self, emb_dim, scale_learnable=False, dropout=0.0):
         """Initialize class.
 
@@ -49,8 +48,8 @@ class PositionalEncoding(nn.Module):
         Returns:
             torch.Tensor: Encoded tensor. Its shape is (batch, time, ...)
         """
-        pos = torch.arange(0, x.size(1), device=x.device).reshape(1, -1) # [b, t]
-        posemb = self._embedding_from_positions(pos)  # [b, t, emb_dim]
+        pos = torch.arange(0, x.size(1), device=x.device).reshape(1, -1) # [1, t]
+        posemb = self._embedding_from_positions(pos)  # [1, t, emb_dim]
         if self.scale_learnable:
             x = x + self.alpha * posemb
         else:

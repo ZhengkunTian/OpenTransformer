@@ -174,45 +174,52 @@ class MultiHeadedCrossAttention(BasedAttention):
 
 
 class MultiHeadedSelfAttentionWithRelPos(BasedAttention):
-    def __init__(self, n_heads, d_model, dropout_rate=0.0, share_qvk_proj=False):
+    def __init__(self, n_heads, d_model, dropout_rate=0.0, skip_term_b=False, share_qvk_proj=False):
         super(MultiHeadedSelfAttentionWithRelPos, self).__init__(n_heads, d_model, dropout_rate, share_qvk_proj)
 
         self.d_model = d_model
         self.share_qvk_proj = share_qvk_proj
+        self.skip_term_b = skip_term_b
         self.nheads = n_heads
         self.d_k = d_model // n_heads
 
         self.qvk_proj = nn.Linear(d_model, d_model if self.share_qvk_proj else d_model * 3)
 
         self.pos_proj = nn.Linear(d_model, d_model, bias=False)
+
         self.posu = nn.Parameter(torch.Tensor(1, 1, n_heads, self.d_k))
         self.posv = nn.Parameter(torch.Tensor(1, 1, n_heads, self.d_k))
 
         torch.nn.init.xavier_normal_(self.posu)
         torch.nn.init.xavier_normal_(self.posv)
 
-    def _shift(self, matrix_bd):
+    def _RelPosBias(self, content, abs_pos):
         """Compute relative positinal encoding.
         Args:
-            matrix_bd: [b, nh, t, 2T - 1]
-            right_context: -1
+            content: [B, T, N, H] if not self.skip_term_b else [1, 1, N, H]
+            abs_pos: [B, N, S=2T-1, H]
         Returns:
             torch.Tensor: Output tensor.
         """
+        B, _, N, _ = content.size()
+        S= abs_pos.size(2)
+        T = (S + 1) // 2
 
-        b, nh, t, T = matrix_bd.size()
-        rel_pos = torch.arange(0, t, dtype=torch.long, device=matrix_bd.device)
-        rel_pos = (rel_pos[None] - rel_pos[:, None]).reshape(1, 1, t, t) + (t - 1)
-        matrix_bd_shifted = torch.gather(matrix_bd, dim=3, index=rel_pos.repeat(b, nh, 1, 1))
+        if not self.skip_term_b:
+            matrix_bd = torch.matmul(content.transpose(1, 2), abs_pos.transpose(-2, -1)) # [B, N, T, S]
+        else:
+            matrix_bd = torch.matmul(content.transpose(1, 2), abs_pos.transpose(-2, -1)) # [1, 1, T, S]
 
-        return matrix_bd_shifted
+        rel_pos = torch.arange(0, T, dtype=torch.long, device=matrix_bd.device)
+        rel_pos = (rel_pos[None] - rel_pos[:, None]).reshape(1, 1, T, T) + (T - 1)
+        return torch.gather(matrix_bd, dim=3, index=rel_pos.repeat(B, N, 1, 1))
 
     def forward(self, x, mask, pos):
         """
         Args:
-            x: [batch_size, time, size]
-            mask: [batch_size, 1, time]
-            pos: positional embedding [batch_size, 2 * time - 1, size]
+            x: [B, T, V]
+            mask: [B, 1, T]
+            pos: positional embedding [B, S=2T-1, V]
         """
 
         x = self.qvk_proj(x)
@@ -223,29 +230,28 @@ class MultiHeadedSelfAttentionWithRelPos(BasedAttention):
             query, key, value = torch.split(x, self.d_model, dim=-1)
 
         batch_size = x.size(0)
+        # [B, T, V] -> [B, T, N, H]
         query = query.reshape(batch_size, -1, self.nheads, self.d_k)
+        # [B, T, V] -> [B, H, T, H]
         key = key.reshape(batch_size, -1, self.nheads, self.d_k).transpose(1, 2)
         value = value.reshape(batch_size, -1, self.nheads, self.d_k).transpose(1, 2)
 
         bpos = pos.size(0)
+        # [B, S, V] -> [B, S, N, H] -> [B, N, S, H]
         pos = self.pos_proj(pos).reshape(bpos, -1, self.nheads, self.d_k).transpose(1, 2)
 
+        # [B, T, N, H] = [B, T, N, H] + [1, 1, N, H]
         query_with_bias_u = query + self.posu
-        query_with_bias_u = query_with_bias_u.transpose(1, 2)
+        query_with_bias_u = query_with_bias_u.transpose(1, 2) # [B, N, T, H]
+        matrix_ac = torch.matmul(query_with_bias_u, key.transpose(-2, -1)) # [B, N, T, T] = [B, N, T, H] * [B, N, H, T]
 
-        query_with_bias_v = query + self.posv
-        query_with_bias_v = query_with_bias_v.transpose(1, 2)
-
-        matrix_ac = torch.matmul(query_with_bias_u, key.transpose(-2, -1))
-
-        matrix_bd = torch.matmul(query_with_bias_v, pos.transpose(-2, -1))
-        matrix_bd = self._shift(matrix_bd)
+        matrix_bd = self._RelPosBias(query + self.posv if not self.skip_term_b else self.posv, pos) # [B, N, T, T]
 
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)
         context, attn_weights = self.compute_context(value, scores, mask.unsqueeze(1) if mask is not None else None)
 
         return context, attn_weights
 
-    def inference(self, x, mask, pos, cache=None):
-        context, attn_weights = self.forward(x, mask, pos)
+    def inference(self, inputs, mask, pos, cache=None):
+        context, attn_weights = self.forward(inputs, mask, pos)
         return context, attn_weights, cache

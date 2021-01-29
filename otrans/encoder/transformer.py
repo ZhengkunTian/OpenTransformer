@@ -5,7 +5,7 @@
 import logging
 import torch
 import torch.nn as nn
-from otrans.module.pos import MixedPositionalEncoding, RelPositionalEncoding
+from otrans.module.pos import PositionalEncoding
 from otrans.module.ffn import PositionwiseFeedForward
 from otrans.module.attention import MultiHeadedSelfAttention, MultiHeadedSelfAttentionWithRelPos
 
@@ -99,10 +99,7 @@ class TransformerEncoder(nn.Module):
         self.normalize_before = normalize_before
         self.relative_positional = relative_positional
 
-        if self.relative_positional:
-            self.pos_emb = RelPositionalEncoding(d_model, pos_dropout)
-        else:
-            self.pos_emb = MixedPositionalEncoding(d_model, pos_dropout)
+        self.pos_emb = PositionalEncoding(d_model, pos_dropout)
 
         self.blocks = nn.ModuleList([
             TransformerEncoderLayer(
@@ -116,9 +113,15 @@ class TransformerEncoder(nn.Module):
 
     def forward(self, inputs, mask):
     
-        enc_output, pos = self.pos_emb(inputs)
+        if self.relative_positional:
+            enc_output = inputs
+            # [1, 2T - 1]
+            position = torch.arange(-(inputs.size(1)-1), inputs.size(1), device=inputs.device).reshape(1, -1)
+            pos = self.pos_emb._embedding_from_positions(position)
+        else:  
+            enc_output, pos = self.pos_emb(inputs)
 
-        enc_output.masked_fill_(~mask.unsqueeze(2), 0.0)
+        # enc_output.masked_fill_(~mask.unsqueeze(2), 0.0)
 
         attn_weights = {}
         for i, block in enumerate(self.blocks):
@@ -131,21 +134,21 @@ class TransformerEncoder(nn.Module):
         return enc_output, mask, attn_weights
 
 
-    def inference(self, inputs, mask, cache=None):
+    # def inference(self, inputs, mask, cache=None):
     
-        enc_output, pos = self.pos_emb.inference(inputs)
+    #     enc_output, pos = self.pos_emb.inference(inputs)
 
-        enc_output.masked_fill_(~mask.unsqueeze(2), 0.0)
+    #     enc_output.masked_fill_(~mask.unsqueeze(2), 0.0)
 
-        attn_weights = {}
-        new_caches = []
-        for i, block in enumerate(self.blocks):
-            enc_output, new_cache, attn_weight = block.inference(enc_output, mask.unsqueeze(1), pos, cache)
-            attn_weights['enc_block_%d' % i] = attn_weight
-            new_caches.append(new_cache)
+    #     attn_weights = {}
+    #     new_caches = []
+    #     for i, block in enumerate(self.blocks):
+    #         enc_output, new_cache, attn_weight = block.inference(enc_output, mask.unsqueeze(1), pos, cache)
+    #         attn_weights['enc_block_%d' % i] = attn_weight
+    #         new_caches.append(new_cache)
 
-        if self.normalize_before:
-            enc_output = self.norm(enc_output)
+    #     if self.normalize_before:
+    #         enc_output = self.norm(enc_output)
 
-        return enc_output, mask, new_caches, attn_weights
+    #     return enc_output, mask, new_caches, attn_weights
 

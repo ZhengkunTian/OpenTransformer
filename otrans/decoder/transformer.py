@@ -128,12 +128,12 @@ class TransformerDecoderLayer(nn.Module):
 
 class TransformerDecoder(nn.Module):
     def __init__(self, vocab_size, d_model=256, n_heads=4, d_ff=2048, memory_dim=256, n_blocks=6, pos_dropout=0.0, slf_attn_dropout=0.0, src_attn_dropout=0.0, ffn_dropout=0.0,
-                 residual_dropout=0.1, activation='relu', normalize_before=True, concat_after=False, relative_positional=False, share_embedding=False):
+                 residual_dropout=0.1, activation='relu', normalize_before=True, concat_after=False, share_embedding=False):
         super(TransformerDecoder, self).__init__()
 
         self.decoder_type = 'transformer'
         self.normalize_before = normalize_before
-        self.relative_positional =relative_positional
+        self.relative_positional = False
 
         self.d_model = d_model
 
@@ -145,7 +145,7 @@ class TransformerDecoder(nn.Module):
             TransformerDecoderLayer(
                 n_heads, d_model, d_ff, memory_dim, slf_attn_dropout, src_attn_dropout,
                 ffn_dropout, residual_dropout, normalize_before=normalize_before, concat_after=concat_after,
-                relative_positional=relative_positional, activation=activation) for _ in range(n_blocks)
+                relative_positional=False, activation=activation) for _ in range(n_blocks)
         ])
 
         if self.normalize_before:
