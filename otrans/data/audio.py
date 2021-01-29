@@ -7,6 +7,8 @@ import random
 import logging
 import numpy as np
 import torchaudio as ta
+import scipy.io.wavfile as siw
+import python_speech_features as psf
 from otrans.data.augment import spec_augment
 from torch.utils.data import Dataset
 from otrans.data import load_vocab, UNK_TOKEN, EOS, BOS, PAD
@@ -29,7 +31,13 @@ class AudioDataset(Dataset):
         self.datadict= datadict
         self.is_eval = is_eval
         self.apply_spec_augment = params['spec_augment'] if not self.is_eval else False
+
+        logger.info('[Online-Reader] Read the feature extracted online!')
+
         self.normalization = params['normalization']
+        self.feature_extractor = params['feature_extractor'] if 'feature_extractor' in params else 'torchaudio'
+        assert self.feature_extractor in ['torchaudio', 'python_speech_feature', 'ta', 'psf']
+        logger.info('Utilize %s to extract feature from wav.' % self.feature_extractor)
         if self.normalization:
             logger.info('Apply Feature Normalization!')
             if 'global_cmvn' in params:
@@ -52,11 +60,11 @@ class AudioDataset(Dataset):
         else:
             self.gaussian_noise = 0.0
 
-        if 'speed_perturb' in params and not self.is_eval:
-            self.apply_speed_perturb = params['speed_perturb']
-            if self.apply_speed_perturb: logger.info('Apply Speed Perturb during the training!')      
-        else:
-            self.apply_speed_perturb = False
+        # if 'speed_perturb' in params and not self.is_eval:
+        #     self.apply_speed_perturb = params['speed_perturb']
+        #     if self.apply_speed_perturb: logger.info('Apply Speed Perturb during the training!')      
+        # else:
+        #     self.apply_speed_perturb = False
 
         if 'volume_perturb' in params and not self.is_eval:
             self.apply_volume_perturb = params['volume_perturb']
@@ -90,22 +98,29 @@ class AudioDataset(Dataset):
 
         utt_id, path = self.file_list[index]
 
-        wavform, sample_frequency = ta.load_wav(path)
+        if self.feature_extractor in ['torchaudio', 'ta']:
+            wavform, sample_frequency = ta.load_wav(path)
+        else:
+            sample_frequency, wavform = siw.read(path)
 
-        if self.apply_speed_perturb:
-            speed_ratio = random.choice([0.9, 1.0, 1.1])
-            if speed_ratio != 1.0:
-                wavform = ta.compliance.kaldi.resample_waveform(
-                    wavform, orig_freq=sample_frequency, new_freq=int(sample_frequency*speed_ratio))
+        # if self.apply_speed_perturb:
+        #     speed_ratio = random.choice([0.9, 1.0, 1.1])
+        #     if speed_ratio != 1.0:
+        #         wavform = ta.compliance.kaldi.resample_waveform(
+        #             wavform, orig_freq=sample_frequency, new_freq=int(sample_frequency*speed_ratio))
 
         if self.apply_volume_perturb:
             volume_factor = 10 ** (random.uniform(-1.6, 1.6) / 20)
             wavform *= volume_factor
 
-        feature = ta.compliance.kaldi.fbank(
-            wavform, num_mel_bins=self.params['num_mel_bins'],
-            sample_frequency=sample_frequency, dither=0.0
-            )
+        if self.feature_extractor in ['torchaudio', 'ta']:
+            feature = ta.compliance.kaldi.fbank(
+                wavform, num_mel_bins=self.params['num_mel_bins'],
+                sample_frequency=sample_frequency, dither=0.0
+                )
+        else:
+            feature_np = psf.base.logfbank(wavform, samplerate=sample_frequency, nfilt=self.params['num_mel_bins'])
+            feature = torch.FloatTensor(feature_np)
 
         if self.normalization:
             if self.apply_global_cmvn:
@@ -159,4 +174,3 @@ class AudioDataset(Dataset):
     @property
     def vocab_size(self):
         return len(self.unit2idx)
-
