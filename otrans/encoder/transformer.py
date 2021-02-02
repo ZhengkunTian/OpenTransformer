@@ -133,7 +133,6 @@ class TransformerEncoder(nn.Module):
 
         return enc_output, mask, attn_weights
 
-
     # def inference(self, inputs, mask, cache=None):
     
     #     enc_output, pos = self.pos_emb.inference(inputs)

@@ -127,7 +127,7 @@ class TransformerLanguageModel(BaseLM):
 
         dec_output = self.embedding(inputs['inputs'])
         dec_mask = get_seq_mask(inputs['inputs'])
-        dec_output = self.pos_embedding(dec_output)
+        dec_output, _ = self.pos_embedding(dec_output)
 
         for _, block in enumerate(self.blocks):
             dec_output, _ = block(dec_output, dec_mask)

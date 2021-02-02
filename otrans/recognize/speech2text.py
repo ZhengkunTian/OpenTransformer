@@ -27,7 +27,7 @@ class SpeechToTextRecognizer(Recognizer):
         new_cache['frontend'] = fe_cache
 
         # memory, memory_mask, enc_cache, enc_attn_weights = self.model.encoder.inference(inputs, inputs_mask, cache['encoder'] if cache is not None else None)
-        memory, memory_mask, enc_attn_weights = self.model.encoder.inference(inputs, inputs_mask)
+        memory, memory_mask, enc_attn_weights = self.model.encoder(inputs, inputs_mask)
         # new_cache['encoder'] = enc_cache
 
         return memory, memory_mask, new_cache, enc_attn_weights

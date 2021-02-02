@@ -163,21 +163,21 @@ class ConformerEncoder(BaseEncoder):
 
         return enc_output, mask, attn_weights
 
-    def inference(self, inputs, mask, cache=None):
+    # def inference(self, inputs, mask, cache=None):
 
-        if self.positional_encoding:
-            enc_output, pos = self._pos_encoding(inputs)
-        else:
-            enc_output = inputs
-            pos = None
+    #     if self.positional_encoding:
+    #         enc_output, pos = self._pos_encoding(inputs)
+    #     else:
+    #         enc_output = inputs
+    #         pos = None
 
-        # x.masked_fill_(~mask.unsqueeze(2), 0.0)
+    #     # x.masked_fill_(~mask.unsqueeze(2), 0.0)
 
-        attn_weights = {}
-        new_caches = []
-        for i, block in enumerate(self.blocks):
-            enc_output, new_cache, attn_weight = block.inference(enc_output, mask, pos, cache[i] if isinstance(cache, list) else cache)
-            new_caches.append(new_cache)
-            attn_weights['enc_block_%d' % i] = attn_weight
+    #     attn_weights = {}
+    #     new_caches = []
+    #     for i, block in enumerate(self.blocks):
+    #         enc_output, new_cache, attn_weight = block.inference(enc_output, mask, pos, cache[i] if isinstance(cache, list) else cache)
+    #         new_caches.append(new_cache)
+    #         attn_weights['enc_block_%d' % i] = attn_weight
 
-        return enc_output, mask, new_caches, attn_weights
+    #     return enc_output, mask, new_caches, attn_weights
