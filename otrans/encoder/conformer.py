@@ -109,7 +109,7 @@ class ConformerEncoderBlock(nn.Module):
             x, slf_attn_weights, new_cache = self.attn_infer(x, mask, pos, cache)
             x = self.conv_augment_forward(x, mask)
 
-        x = self.post_ffn_norm(x)
+        x = self.post_ffn_forward(x)
 
         return self.final_norm(x),  new_cache, {'slf_attn_weights': slf_attn_weights}
 
