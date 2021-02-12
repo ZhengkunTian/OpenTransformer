@@ -143,12 +143,12 @@ class TransformerLanguageModel(BaseLM):
     def predict(self, targets, last_frame=True):
 
         dec_output = self.embedding(targets)
-        dec_output = self.pos_embedding(dec_output)
+        dec_output, _ = self.pos_embedding(dec_output)
 
         dec_mask = get_seq_mask(targets)
 
         for _, block in enumerate(self.blocks):
-            dec_output, dec_mask = block(dec_output, dec_mask)
+            dec_output, _ = block(dec_output, dec_mask)
 
         if self.normalize_before:
             dec_output = self.after_norm(dec_output)
