@@ -40,6 +40,7 @@ class BaseScheduler(object):
 
     def initial_lr(self):
         if self.stepwise:
+            self.lr = self.get_step_lr(step=self.global_step)
             self.lr = self.step()
         else:
             self.lr = self.get_epoch_lr(epoch=self.global_epoch)
