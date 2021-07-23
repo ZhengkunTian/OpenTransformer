@@ -80,6 +80,11 @@ class SpeechToText(BaseModel):
             checkpoint['ctc'] = self.assistor.state_dict()
 
         torch.save(checkpoint, name)
+        
+    def load_model(self, chkpt):
+        self.frontend.load_state_dict(chkpt['frontend'])
+        self.encoder.load_state_dict(chkpt['encoder'])
+        self.decoder.load_state_dict(chkpt['decoder'])
 
     def set_epoch(self, epoch):
         pass
