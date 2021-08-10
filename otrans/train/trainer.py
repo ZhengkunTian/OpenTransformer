@@ -159,7 +159,7 @@ class Trainer(object):
                 batch_size = num_coeffs * 2
                 
                 # beta random is a bunch of 0.1s and 0.9s
-                lambda_ = torch.from_numpy(np.random.beta(0.5, 0.5))
+                lambda_ = torch.from_numpy(np.random.beta(0.5, 0.5, size=(1))).float()
                 mix_coeffs = lambda_.unsqueeze(1).unsqueeze(1).repeat(num_coeffs, t_, c_)
                 if self.ngpu > 0:
                     mix_coeffs = mix_coeffs.cuda()
