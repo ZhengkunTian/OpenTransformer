@@ -18,7 +18,7 @@ class BaseScheduler(object):
 
         # Attach optimizer
         self.optimizer = optimizer
-        self.global_step = 0
+        self.global_step = 1
         self.global_epoch = 0
         self.stepwise = stepwise
         self.lr = 0
