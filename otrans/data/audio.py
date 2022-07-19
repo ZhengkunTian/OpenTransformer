@@ -99,7 +99,7 @@ class AudioDataset(Dataset):
         utt_id, path = self.file_list[index]
 
         if self.feature_extractor in ['torchaudio', 'ta']:
-            wavform, sample_frequency = ta.load_wav(path)
+            wavform, sample_frequency = ta.load(path)
         else:
             sample_frequency, wavform = siw.read(path)
 

@@ -23,10 +23,10 @@ if [ ${stage} -le -1 ]; then
     ### But you can utilize Kaldi recipes in most cases
     echo "stage 0: Data preparation"
 
-    sh local/download_and_untar.sh $data $data_url data_aishell || exit 1;
-    sh local/download_and_untar.sh $data $data_url resource_aishell || exit 1;
+    bash local/download_and_untar.sh $data $data_url data_aishell || exit 1;
+    bash local/download_and_untar.sh $data $data_url resource_aishell || exit 1;
 
-    sh local/aishell_data_prep.sh $data/data_aishell/wav $data/data_aishell/transcript || exit 1;
+    bash local/aishell_data_prep.sh $data/data_aishell/wav $data/data_aishell/transcript || exit 1;
 
     for name in train test dev;do
         python local/split_and_norm.py data/$name/text.org data/$name/text || exit 1;
