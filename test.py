@@ -26,9 +26,7 @@ def main(args):
             params = yaml.load(f, Loader=yaml.FullLoader)
     else:
         params = checkpoint['params']
-    if args.test:
-        params['data']['test']['feat'][0] = params['data']['test']['feat'][0].replace("dev", "test")
-        params['data']['test']['text'][0] = params['data']['test']['text'][0].replace("dev", "test")
+
     params['data']['batch_size'] = args.batch_size
     model_type = params['model']['type']
     model = End2EndModel[model_type](params['model'])
@@ -224,7 +222,6 @@ if __name__ == '__main__':
     # transducer related
     parser.add_argument('-mt', '--max_tokens_per_chunk', type=int, default=5)
     parser.add_argument('-pf', '--path_fusion', action='store_true', default=False)
-    parser.add_argument('-test', '--test', action='store_true', default=False)
     parser.add_argument('-s', '--suffix', type=str, default=None)
     parser.add_argument('-p2w', '--piece2word', action='store_true', default=False)
     parser.add_argument('-resc', '--apply_rescoring', action='store_true', default=False)
