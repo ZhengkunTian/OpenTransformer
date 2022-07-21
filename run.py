@@ -63,7 +63,7 @@ def main(args, params, expdir):
 
     trainer = Trainer(params, model=model, optimizer=optimizer, scheduler=scheduler, expdir=expdir, ngpu=args.ngpu,
                       parallel_mode=args.parallel_mode, local_rank=args.local_rank, is_debug=args.debug,
-                      keep_last_n_chkpt=args.keep_last_n_chkpt, from_epoch=args.from_epoch)
+                      keep_last_n_chkpt=args.keep_last_n_chkpt, from_epoch=args.from_epoch, mixspeech=args.mixspeech)
 
     train_loader = FeatureLoader(params, 'train', ngpu=args.ngpu, mode=args.parallel_mode)
 
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('-tfe', '--from_epoch', type=int, default=0)
     parser.add_argument('-vb', '--verbose', type=int, default=0)
     parser.add_argument('-ol', '--opt_level', type=str, choices=['O0', 'O1', 'O2', 'O3'], default='O1')
+    parser.add_argument('-ms', '--mixspeech', type=int, default=0)
     cmd_args = parser.parse_args()
 
     with open(cmd_args.config, 'r') as f:

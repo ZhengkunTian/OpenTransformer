@@ -6,13 +6,16 @@ import logging
 import torch.distributed as dist
 from otrans.train.utils import MeanLoss, Visulizer, AverageMeter, Summary, map_to_cuda, AuxiliaryLossAverageMeter
 
+# for the beta random
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 
 class Trainer(object):
     def __init__(self, params, model, optimizer, scheduler, is_visual=False,
                  expdir='./', ngpu=1, parallel_mode='dp', local_rank=0, is_debug=False,
-                 keep_last_n_chkpt=30, from_epoch=0):
+                 keep_last_n_chkpt=30, from_epoch=0, mixspeech=False):
 
         self.params = params
         self.model = model
@@ -21,6 +24,9 @@ class Trainer(object):
         self.expdir = expdir
         self.is_visual = is_visual
         self.is_debug = is_debug
+
+        # [MIXSPEECH] added the option to train with mixspeech data augmentation
+        self.is_mixspeech = bool(mixspeech)
 
         self.ngpu = ngpu
         self.parallel_mode = parallel_mode
@@ -146,10 +152,58 @@ class Trainer(object):
 
             start = time.time()
             
-            # loss: tensor
-            # axu_loss: dict {loss1: value1, loss2: value2}
-            # self.model.forward_hook(self.scheduler.global_step, self.scheduler.global_epoch)
-            loss, aux_loss = self.model(inputs, targets)
+            if self.is_mixspeech:
+                batch_size, t_, c_ = inputs["inputs"].shape
+                # [MIXSPEECH] mixspeech works by pairing data. So it there is an odd number of cases, drop the last one.
+                num_coeffs = batch_size // 2
+                batch_size = num_coeffs * 2
+                
+                # beta random is a bunch of 0.1s and 0.9s
+                lambda_ = torch.from_numpy(np.random.beta(0.5, 0.5, size=(1))).float()
+                mix_coeffs = lambda_.unsqueeze(1).unsqueeze(1).repeat(num_coeffs, t_, c_)
+                if self.ngpu > 0:
+                    mix_coeffs = mix_coeffs.cuda()
+                    lambda_ = lambda_.cuda()
+
+                # MIXSPEECH the inputs: X_MIX
+                new_inputs = dict()
+                # easier on the eyes
+                ii = inputs["inputs"]
+                new_inputs["inputs"] = ii[0:batch_size:2, :, :] * mix_coeffs +\
+                     ii[1:batch_size:2, :, :] * (1 - mix_coeffs)
+
+                # mask: pick the longer one[11000] and [11100] --> pick [11100]
+                new_inputs["mask"] = torch.max(
+                    inputs["mask"][0:batch_size:2, :], inputs["mask"][1:batch_size:2, :]
+                )
+                # inputs_length: same
+                new_inputs["inputs_length"] = torch.max(
+                    inputs["inputs_length"][0:batch_size:2], inputs["inputs_length"][1:batch_size:2]
+                )
+                # therefore it's a good idea to train short_first
+
+                # MIXSPEECH the outputs, Y_1
+                target_1 = dict()
+                target_1["mask"] = targets["mask"][0:batch_size:2, :]
+                target_1["targets_length"] = targets["targets_length"][0:batch_size:2]
+                target_1["targets"] = targets["targets"][0:batch_size:2, :]
+
+                # MIXSPEECH the outputs, Y_2
+                target_2 = dict()
+                target_2["mask"] = targets["mask"][1:batch_size:2, :]
+                target_2["targets_length"] = targets["targets_length"][1:batch_size:2]
+                target_2["targets"] = targets["targets"][1:batch_size:2, :]
+
+                loss_1, aux_loss_1 = self.model(new_inputs, target_1)
+                loss_2, aux_loss_2 = self.model(new_inputs, target_2)
+                loss = lambda_ * loss_1 + (1 - lambda_) * loss_2
+                # should be a dictionary when there are something...
+                aux_loss = None
+            else:
+                # loss: tensor
+                # axu_loss: dict {loss1: value1, loss2: value2}
+                # self.model.forward_hook(self.scheduler.global_step, self.scheduler.global_epoch)
+                loss, aux_loss = self.model(inputs, targets)
 
             loss = torch.mean(loss) / self.accum_steps
             loss.backward()
